@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/testora_widgets.dart';
+import '../../application/exam_catalog_providers.dart';
+import '../../../quiz/application/quiz_setup_provider.dart';
 
 class ExamDetailsScreen extends ConsumerWidget {
   const ExamDetailsScreen({super.key, required this.examId});
@@ -41,7 +43,16 @@ class ExamDetailsScreen extends ConsumerWidget {
   }
 
   void _startQuiz(BuildContext context, WidgetRef ref) {
-    context.pushNamed('quiz-setup', pathParameters: {'examId': examId});
+    final categoryId = ref.read(selectedExamCategoryProvider);
+
+    ref
+        .read(quizSetupProvider.notifier)
+        .resetForExam(categoryId, subjectId: examId);
+
+    context.pushNamed(
+      'quiz-setup',
+      pathParameters: {'examId': examId},
+    );
   }
 
   @override
