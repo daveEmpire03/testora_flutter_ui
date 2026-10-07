@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/testora_widgets.dart';
+import '../../application/payment_catalog_provider.dart';
+import '../../domain/entities/exam_payment_package.dart';
 
-class PaymentScreen extends StatelessWidget {
+class PaymentScreen extends ConsumerWidget {
   const PaymentScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.tokens;
+    final packages = ref.watch(paymentPackagesProvider);
 
     return TestoraScaffold(
       child: ListView(
@@ -33,7 +38,7 @@ class PaymentScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Manage your Testora plan, payments and billing.',
+            'Choose the examination you want to unlock on Testora.',
             style: TextStyle(
               color: tokens.textSecondary,
               fontSize: 13,
@@ -42,99 +47,52 @@ class PaymentScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xxl),
 
-          const _CurrentPlanCard(),
+          _AccessInfoCard(),
 
           const SizedBox(height: AppSpacing.section),
           const SectionTitle(
-            title: 'Upgrade your plan',
-            subtitle: 'Unlock more practice features when billing is enabled',
+            title: 'Exam access',
+            subtitle: 'Each examination has its own access price',
           ),
           const SizedBox(height: AppSpacing.md),
 
-          const _PlanCard(
-            title: 'Free',
-            subtitle: 'For everyday practice',
-            icon: Icons.school_outlined,
-            features: [
-              'Practice questions',
-              'Basic quiz results',
-              'Bookmarks',
-            ],
-            selected: true,
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          const _PlanCard(
-            title: 'Pro',
-            subtitle: 'For serious exam preparation',
-            icon: Icons.workspace_premium_outlined,
-            features: [
-              'More practice questions',
-              'Advanced performance insights',
-              'Full solution review',
-              'Premium mock exam tools',
-            ],
-          ),
+          for (var index = 0; index < packages.length; index++) ...[
+            _ExamPaymentCard(
+              package: packages[index],
+              onTap:
+                  () => context.pushNamed(
+                    'payment-checkout',
+                    pathParameters: {'packageId': packages[index].id},
+                  ),
+            ),
+            if (index != packages.length - 1)
+              const SizedBox(height: AppSpacing.md),
+          ],
 
           const SizedBox(height: AppSpacing.section),
-          const SectionTitle(title: 'Payment method'),
-          const SizedBox(height: AppSpacing.md),
-
           TestoraCard(
+            backgroundColor: tokens.surfaceSecondary,
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: tokens.surfaceSecondary,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                    border: Border.all(color: tokens.border),
-                  ),
-                  child: Icon(
-                    Icons.credit_card_outlined,
-                    color: tokens.textPrimary,
-                    size: 21,
-                  ),
+                Icon(
+                  Icons.info_outline_rounded,
+                  color: tokens.textPrimary,
+                  size: 20,
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'No payment method',
-                        style: TextStyle(
-                          color: tokens.textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        'A payment method will appear here after billing is connected.',
-                        style: TextStyle(
-                          color: tokens.textSecondary,
-                          fontSize: 11.5,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    'After selecting an exam, you can choose Paystack for online payment or Manual Transfer for bank payment.',
+                    style: TextStyle(
+                      color: tokens.textSecondary,
+                      fontSize: 12,
+                      height: 1.5,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-
-          const SizedBox(height: AppSpacing.section),
-          const SectionTitle(title: 'Billing history'),
-          const SizedBox(height: AppSpacing.md),
-
-          const TestoraEmptyState(
-            icon: Icons.receipt_long_outlined,
-            title: 'No payments yet',
-            message: 'Your completed Testora payments will appear here.',
           ),
         ],
       ),
@@ -142,9 +100,7 @@ class PaymentScreen extends StatelessWidget {
   }
 }
 
-class _CurrentPlanCard extends StatelessWidget {
-  const _CurrentPlanCard();
-
+class _AccessInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -165,7 +121,7 @@ class _CurrentPlanCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.button),
             ),
             child: Icon(
-              Icons.account_balance_wallet_outlined,
+              Icons.lock_open_outlined,
               color: tokens.background,
               size: 24,
             ),
@@ -176,42 +132,23 @@ class _CurrentPlanCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Current plan',
+                  'Unlock exam access',
                   style: TextStyle(
-                    color: tokens.background.withValues(alpha: 0.70),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w500,
+                    color: tokens.background,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Free',
+                  'Pay only for the exam package you need.',
                   style: TextStyle(
-                    color: tokens.background,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
+                    color: tokens.background.withValues(alpha: 0.72),
+                    fontSize: 12,
+                    height: 1.4,
                   ),
                 ),
               ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            decoration: BoxDecoration(
-              color: tokens.background.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(AppRadius.circle),
-            ),
-            child: Text(
-              'ACTIVE',
-              style: TextStyle(
-                color: tokens.background,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.4,
-              ),
             ),
           ),
         ],
@@ -220,139 +157,116 @@ class _CurrentPlanCard extends StatelessWidget {
   }
 }
 
-class _PlanCard extends StatelessWidget {
-  const _PlanCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.features,
-    this.selected = false,
+class _ExamPaymentCard extends StatelessWidget {
+  const _ExamPaymentCard({
+    required this.package,
+    required this.onTap,
   });
 
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final List<String> features;
-  final bool selected;
+  final ExamPaymentPackage package;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
 
     return TestoraCard(
-      isSelected: selected,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      onTap: onTap,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Row(
         children: [
-          Row(
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: tokens.surfaceSecondary,
+              borderRadius: BorderRadius.circular(AppRadius.button),
+              border: Border.all(color: tokens.border),
+            ),
+            child: Icon(
+              _iconFor(package.iconKey),
+              color: tokens.textPrimary,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  package.name,
+                  style: TextStyle(
+                    color: tokens.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  package.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: tokens.textSecondary,
+                    fontSize: 11.5,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color:
-                      selected
-                          ? tokens.textPrimary
-                          : tokens.surfaceSecondary,
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                  border: Border.all(color: tokens.border),
-                ),
-                child: Icon(
-                  icon,
-                  color:
-                      selected
-                          ? tokens.background
-                          : tokens.textPrimary,
-                  size: 21,
+              Text(
+                _formatNaira(package.priceNaira),
+                style: TextStyle(
+                  color: tokens.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: tokens.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: tokens.textSecondary,
-                        fontSize: 11.5,
-                      ),
-                    ),
-                  ],
-                ),
+              const SizedBox(height: AppSpacing.xs),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: tokens.textSecondary,
+                size: 20,
               ),
-              if (selected)
-                const TestoraBadge(label: 'Current'),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
-          for (final feature in features) ...[
-            _FeatureRow(label: feature),
-            const SizedBox(height: AppSpacing.sm),
-          ],
-          if (!selected) ...[
-            const SizedBox(height: AppSpacing.md),
-            TestoraButton(
-              label: 'Upgrade',
-              icon: Icons.lock_open_rounded,
-              enabled: false,
-              onTap: () {},
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Center(
-              child: Text(
-                'Billing integration not connected yet',
-                style: TextStyle(
-                  color: tokens.textMuted,
-                  fontSize: 10.5,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 }
 
-class _FeatureRow extends StatelessWidget {
-  const _FeatureRow({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          Icons.check_circle_outline_rounded,
-          size: 17,
-          color: AppColors.success,
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: tokens.textSecondary,
-              fontSize: 12,
-              height: 1.4,
-            ),
-          ),
-        ),
-      ],
-    );
+IconData _iconFor(String key) {
+  switch (key) {
+    case 'school':
+      return Icons.school_outlined;
+    case 'menu_book':
+      return Icons.menu_book_outlined;
+    case 'account_balance':
+      return Icons.account_balance_outlined;
+    case 'workspace_premium':
+      return Icons.workspace_premium_outlined;
+    default:
+      return Icons.quiz_outlined;
   }
+}
+
+String _formatNaira(int amount) {
+  final raw = amount.toString();
+  final buffer = StringBuffer();
+
+  for (var index = 0; index < raw.length; index++) {
+    if (index > 0 && (raw.length - index) % 3 == 0) {
+      buffer.write(',');
+    }
+    buffer.write(raw[index]);
+  }
+
+  return '₦$buffer';
 }
