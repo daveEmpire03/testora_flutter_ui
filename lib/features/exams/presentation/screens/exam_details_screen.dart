@@ -1,184 +1,119 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:testora_flutter_ui/shared/testora_widgets.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/testora_widgets.dart';
 import '../../../quiz/providers/quiz_providers.dart';
 
 class ExamDetailsScreen extends ConsumerWidget {
-  final String examId;
-
   const ExamDetailsScreen({super.key, required this.examId});
+
+  final String examId;
 
   String get _name {
     if (examId.isEmpty) return 'Subject';
+    if (examId == 'english') return 'English Language';
     return examId[0].toUpperCase() + examId.substring(1);
   }
 
+  IconData get _icon {
+    switch (examId) {
+      case 'mathematics':
+        return Icons.functions_rounded;
+      case 'english':
+        return Icons.translate_rounded;
+      case 'physics':
+        return Icons.science_outlined;
+      case 'chemistry':
+        return Icons.biotech_outlined;
+      case 'biology':
+        return Icons.eco_outlined;
+      case 'government':
+        return Icons.gavel_rounded;
+      case 'economics':
+        return Icons.trending_up_rounded;
+      case 'literature':
+        return Icons.menu_book_rounded;
+      default:
+        return Icons.school_outlined;
+    }
+  }
+
   void _startQuiz(BuildContext context, WidgetRef ref) {
-    // Reset any previous attempt state so a fresh quiz starts.
     ref.invalidate(quizControllerProvider);
     context.pushNamed('quiz', pathParameters: {'examId': examId});
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
+    final tokens = context.tokens;
 
     return Scaffold(
       appBar: AppBar(title: Text(_name)),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 18, 18, 36),
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.lg,
+          AppSpacing.sp40,
+        ),
         children: [
-          // Hero
-          Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.pink, AppColors.purple],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.purple.withValues(alpha: .16),
-                  blurRadius: 22,
-                  offset: const Offset(0, 9),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Container(
-                  width: 82,
-                  height: 82,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: .15),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: const Icon(
-                    Icons.functions_rounded,
-                    size: 42,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 15),
-                Text(
-                  '$_name Practice',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 25,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'UTME / JAMB Past Questions',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 13),
-                const Text(
-                  'Build your confidence with past questions, '
-                  'topic-based practice and timed mock exams.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
+          _SubjectHero(
+            icon: _icon,
+            subject: _name,
+            onStart: () => _startQuiz(context, ref),
           ),
-
-          const SizedBox(height: 22),
-
-          // Primary actions
-          GradientButton(
-            label: 'Start Practice',
-            icon: Icons.play_arrow_rounded,
-            onTap: () => _startQuiz(context, ref),
-          ),
-          const SizedBox(height: 11),
-          OutlinedButton.icon(
-            onPressed: () => context.push('/mock-exams'),
-            icon: const Icon(Icons.timer_outlined),
-            label: const Text('Take Mock Exam'),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(54),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(27),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 30),
-
-          // Study options
+          const SizedBox(height: AppSpacing.section),
           const SectionTitle(
-            title: 'Study & Practice',
-            subtitle: 'Choose how you want to prepare',
+            title: 'Study & practice',
+            subtitle: 'Choose the session that fits your goal',
           ),
-          const SizedBox(height: 13),
-          _Tile(
+          const SizedBox(height: AppSpacing.md),
+          _PracticeOption(
             icon: Icons.bolt_rounded,
-            title: 'Quick Practice',
-            subtitle: '10 random questions',
-            badge: 'Fast',
+            title: 'Quick practice',
+            subtitle: 'A short set of random questions',
+            badge: '10 Qs',
             onTap: () => _startQuiz(context, ref),
           ),
-          const SizedBox(height: 10),
-          _Tile(
+          const SizedBox(height: AppSpacing.sm),
+          _PracticeOption(
             icon: Icons.quiz_outlined,
-            title: 'Standard Practice',
-            subtitle: '20 random questions',
+            title: 'Standard practice',
+            subtitle: 'Build consistency with a longer session',
             badge: '20 Qs',
             onTap: () => _startQuiz(context, ref),
           ),
-          const SizedBox(height: 10),
-          _Tile(
+          const SizedBox(height: AppSpacing.sm),
+          _PracticeOption(
             icon: Icons.topic_outlined,
-            title: 'Practice by Topic',
-            subtitle: 'Focus on a specific topic',
+            title: 'Practice by topic',
+            subtitle: 'Focus on a specific area of the subject',
             badge: 'Topics',
             onTap: () => _startQuiz(context, ref),
           ),
-          const SizedBox(height: 10),
-          _Tile(
+          const SizedBox(height: AppSpacing.sm),
+          _PracticeOption(
             icon: Icons.calendar_month_outlined,
-            title: 'Past Questions by Year',
-            subtitle: 'Practise previous UTME questions',
-            badge: '15 years',
+            title: 'Past questions',
+            subtitle: 'Work through previous exam questions',
+            badge: 'Years',
             onTap: () => _startQuiz(context, ref),
           ),
-          const SizedBox(height: 10),
-          _Tile(
+          const SizedBox(height: AppSpacing.sm),
+          _PracticeOption(
             icon: Icons.timer_outlined,
-            title: 'Mock Examination',
-            subtitle: 'Practise under timed conditions',
+            title: 'Mock examination',
+            subtitle: 'Practise under timed CBT conditions',
             badge: 'Timed',
             onTap: () => context.push('/mock-exams'),
           ),
-
-          const SizedBox(height: 30),
-
-          // Insight
-          Container(
-            padding: const EdgeInsets.all(17),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: .06),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: .12),
-              ),
-            ),
+          const SizedBox(height: AppSpacing.section),
+          TestoraCard(
+            backgroundColor: tokens.surfaceSecondary,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -186,33 +121,35 @@ class ExamDetailsScreen extends ConsumerWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: .10),
-                    shape: BoxShape.circle,
+                    color: tokens.card,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    border: Border.all(color: tokens.border),
                   ),
                   child: Icon(
                     Icons.lightbulb_outline_rounded,
-                    color: theme.colorScheme.primary,
+                    color: tokens.textPrimary,
                     size: 21,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Study Insight',
-                        style: theme.textTheme.titleSmall?.copyWith(
+                        'Study tip',
+                        style: TextStyle(
+                          color: tokens.textPrimary,
+                          fontSize: 14,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(height: 5),
+                      const SizedBox(height: AppSpacing.xs),
                       Text(
-                        'Consistent daily practice is the fastest way to '
-                        'improve your scores. Aim for at least 20 questions '
-                        'per day.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                        'Practise consistently, then review the explanations for questions you miss before starting another session.',
+                        style: TextStyle(
+                          color: tokens.textSecondary,
+                          fontSize: 12,
                           height: 1.5,
                         ),
                       ),
@@ -228,101 +165,130 @@ class ExamDetailsScreen extends ConsumerWidget {
   }
 }
 
-// =============================================================================
-// TILE
-// =============================================================================
-
-class _Tile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final String? badge;
-  final VoidCallback onTap;
-
-  const _Tile({
+class _SubjectHero extends StatelessWidget {
+  const _SubjectHero({
     required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    this.badge,
+    required this.subject,
+    required this.onStart,
   });
+
+  final IconData icon;
+  final String subject;
+  final VoidCallback onStart;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final tokens = context.tokens;
 
-    return Material(
-      color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: .5),
+    return TestoraCard(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      backgroundColor: tokens.surfaceSecondary,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              color: tokens.textPrimary,
+              borderRadius: BorderRadius.circular(AppRadius.card),
+            ),
+            child: Icon(icon, color: tokens.background, size: 29),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          Text(
+            '$subject practice',
+            style: TextStyle(
+              color: tokens.textPrimary,
+              fontSize: 24,
+              height: 1.15,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.6,
             ),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: .08),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Icon(icon, color: theme.colorScheme.primary, size: 22),
-              ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (badge != null) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: .07),
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                  child: Text(
-                    badge!,
-                    style: TextStyle(
-                      color: theme.colorScheme.primary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 5),
-              ],
-              const Icon(Icons.chevron_right_rounded),
-            ],
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Prepare with exam-style questions, focused practice and timed sessions.',
+            style: TextStyle(
+              color: tokens.textSecondary,
+              fontSize: 13,
+              height: 1.5,
+            ),
           ),
-        ),
+          const SizedBox(height: AppSpacing.xl),
+          TestoraButton(
+            label: 'Start practice',
+            icon: Icons.play_arrow_rounded,
+            onTap: onStart,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PracticeOption extends StatelessWidget {
+  const _PracticeOption({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.badge,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String badge;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
+    return TestoraCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: tokens.surfaceSecondary,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              border: Border.all(color: tokens.border),
+            ),
+            child: Icon(icon, size: 21, color: tokens.textPrimary),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: tokens.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: tokens.textSecondary,
+                    fontSize: 11.5,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          TestoraBadge(label: badge),
+        ],
       ),
     );
   }
