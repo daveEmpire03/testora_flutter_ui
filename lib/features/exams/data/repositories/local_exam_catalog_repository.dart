@@ -174,9 +174,8 @@ class LocalExamCatalogRepository implements ExamCatalogRepository {
     ),
   ];
 
-  static final _years = List<int>.unmodifiable(
-    List<int>.generate(15, (index) => 2026 - index),
-  );
+  // Past-paper years stay empty until licensed/official question data is added.
+  static const _years = <int>[];
 
   @override
   Future<List<ExamCategory>> getExamCategories() async => _categories;
