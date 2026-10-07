@@ -19,3 +19,18 @@ final examSubjectsProvider =
           .watch(examCatalogRepositoryProvider)
           .getSubjects(examCategoryId: examCategoryId);
     });
+
+
+final selectedExamCategoryProvider =
+    NotifierProvider<SelectedExamCategoryController, String>(
+      SelectedExamCategoryController.new,
+    );
+
+class SelectedExamCategoryController extends Notifier<String> {
+  @override
+  String build() => 'general';
+
+  void select(String examCategoryId) {
+    state = examCategoryId;
+  }
+}
