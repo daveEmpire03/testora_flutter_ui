@@ -66,13 +66,28 @@ class GradientScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TestoraScaffold(
+    final content = Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.brandDeepPurple,
+            AppColors.brandPlum,
+            AppColors.brandDeep,
+          ],
+        ),
+      ),
+      child: safeArea ? SafeArea(child: child) : child,
+    );
+
+    return Scaffold(
+      backgroundColor: AppColors.brandDeep,
+      resizeToAvoidBottomInset: resizeToAvoidBottomInset,
       appBar: appBar,
       bottomNavigationBar: bottomNavigationBar,
       floatingActionButton: floatingActionButton,
-      resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-      safeArea: safeArea,
-      child: child,
+      body: content,
     );
   }
 }
