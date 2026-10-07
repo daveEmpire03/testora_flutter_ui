@@ -4,17 +4,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/testora_widgets.dart';
 import '../../application/exam_catalog_providers.dart';
 import '../../domain/entities/exam_subject.dart';
 
-class ExamsScreen extends ConsumerWidget {
+class ExamsScreen extends ConsumerStatefulWidget {
   const ExamsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ExamsScreen> createState() => _ExamsScreenState();
+}
+
+class _ExamsScreenState extends ConsumerState<ExamsScreen> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
     final categoryId = ref.watch(selectedExamCategoryProvider);
-    final subjects = ref.watch(examSubjectsProvider(categoryId));
     final categories = ref.watch(examCategoriesProvider);
+    final subjects = ref.watch(examSubjectsProvider(categoryId));
+    final tokens = context.tokens;
 
     final categoryName = categories.maybeWhen(
       data: (items) {
@@ -26,235 +36,145 @@ class ExamsScreen extends ConsumerWidget {
       orElse: () => 'General',
     );
 
-    return Scaffold(
-      backgroundColor: AppColors.brandDeep,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.brandDeepPurple,
-              AppColors.brandPlum,
-              AppColors.brandDeep,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: subjects.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: Colors.white),
+    return TestoraScaffold(
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.xl,
+              AppSpacing.lg,
+              0,
             ),
-            error:
-                (error, _) => Center(
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    categoryName,
+                    style: TextStyle(
+                      color: tokens.textPrimary,
+                      fontSize: 28,
+                      height: 1.05,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.8,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Choose a subject to start practising.',
+                    style: TextStyle(
+                      color: tokens.textSecondary,
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  TextField(
+                    onChanged:
+                        (value) => setState(
+                          () => _query = value.trim().toLowerCase(),
+                        ),
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.search_rounded),
+                      hintText: 'Search subjects',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.section),
+                  const SectionTitle(
+                    title: 'Subjects',
+                    subtitle: 'Explore available subjects',
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+              ),
+            ),
+          ),
+          subjects.when(
+            loading:
+                () => const SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      'Could not load subjects.\n$error',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white),
+                    padding: EdgeInsets.symmetric(vertical: 48),
+                    child: TestoraLoading(message: 'Loading subjects...'),
+                  ),
+                ),
+            error:
+                (error, _) => SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: TestoraEmptyState(
+                      icon: Icons.error_outline_rounded,
+                      title: 'Could not load subjects',
+                      message: '$error',
                     ),
                   ),
                 ),
-            data:
-                (items) => CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                      sliver: SliverToBoxAdapter(
-                        child: _SubjectsHeader(
-                          categoryName: categoryName,
-                          onBack: () => context.go('/home'),
-                        ),
+            data: (items) {
+              final filtered =
+                  items.where((subject) {
+                    if (_query.isEmpty) return true;
+                    return subject.name.toLowerCase().contains(_query) ||
+                        subject.description.toLowerCase().contains(_query);
+                  }).toList(growable: false);
+
+              if (filtered.isEmpty) {
+                return const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40),
+                    child: TestoraEmptyState(
+                      icon: Icons.search_off_rounded,
+                      title: 'No subjects found',
+                      message: 'Try a different search term.',
+                    ),
+                  ),
+                );
+              }
+
+              return SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.sp40,
+                ),
+                sliver: SliverGrid(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final subject = filtered[index];
+                      return TestoraGridCard(
+                            icon: _iconFor(subject.iconKey),
+                            title: subject.name,
+                            subtitle: subject.description,
+                            onTap:
+                                () => context.pushNamed(
+                                  'exam-details',
+                                  pathParameters: {'examId': subject.id},
+                                ),
+                          )
+                          .animate(delay: (40 * index).ms)
+                          .fadeIn(duration: 230.ms)
+                          .slideY(
+                            begin: 0.04,
+                            end: 0,
+                            duration: 230.ms,
+                            curve: Curves.easeOutCubic,
+                          );
+                    },
+                    childCount: filtered.length,
+                  ),
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: AppSpacing.md,
+                        mainAxisSpacing: AppSpacing.md,
+                        childAspectRatio: 0.95,
                       ),
-                    ),
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-                      sliver: SliverGrid(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final subject = items[index];
-                            return _SubjectCard(
-                                  subject: subject,
-                                  onTap:
-                                      () => context.pushNamed(
-                                        'exam-details',
-                                        pathParameters: {
-                                          'examId': subject.id,
-                                        },
-                                      ),
-                                )
-                                .animate(delay: (35 * index).ms)
-                                .fadeIn(duration: 220.ms)
-                                .slideY(
-                                  begin: 0.04,
-                                  end: 0,
-                                  duration: 220.ms,
-                                );
-                          },
-                          childCount: items.length,
-                        ),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 0.92,
-                            ),
-                      ),
-                    ),
-                  ],
                 ),
+              );
+            },
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SubjectsHeader extends StatelessWidget {
-  const _SubjectsHeader({
-    required this.categoryName,
-    required this.onBack,
-  });
-
-  final String categoryName;
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        IconButton.filledTonal(
-          onPressed: onBack,
-          style: IconButton.styleFrom(
-            backgroundColor: Colors.white.withValues(alpha: 0.08),
-            foregroundColor: Colors.white,
-          ),
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
-        const SizedBox(height: 18),
-        Text(
-          categoryName.toUpperCase(),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.2,
-          ),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          'Explore available subjects',
-          style: TextStyle(
-            color: Color(0xB3FFFFFF),
-            fontSize: 12,
-          ),
-        ),
-        const SizedBox(height: 14),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.14),
-            ),
-          ),
-          child: const TextField(
-            style: TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              prefixIcon: Icon(
-                Icons.search_rounded,
-                color: Color(0xB3FFFFFF),
-              ),
-              hintText: 'Search subjects...',
-              hintStyle: TextStyle(color: Color(0x80FFFFFF)),
-              filled: false,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SubjectCard extends StatelessWidget {
-  const _SubjectCard({
-    required this.subject,
-    required this.onTap,
-  });
-
-  final ExamSubject subject;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final icon = _iconFor(subject.iconKey);
-
-    return Material(
-      color: Colors.white.withValues(alpha: 0.045),
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.16),
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.09),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.brandViolet.withValues(alpha: 0.18),
-                      blurRadius: 18,
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                subject.name,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Start Practice',
-                style: TextStyle(
-                  color: Color(0x99FFFFFF),
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }
@@ -275,7 +195,7 @@ IconData _iconFor(String key) {
     case 'translate':
       return Icons.translate_rounded;
     case 'economics':
-      return Icons.monetization_on_outlined;
+      return Icons.trending_up_rounded;
     case 'public':
       return Icons.public_rounded;
     case 'government':
