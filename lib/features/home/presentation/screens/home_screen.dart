@@ -202,7 +202,7 @@ class _ProfileAvatar extends StatelessWidget {
             border: Border.all(color: tokens.cardBorder),
           ),
           child: Text(
-            name.characters.first.toUpperCase(),
+            (name.isNotEmpty ? name[0] : 'S').toUpperCase(),
             style: TextStyle(
               color: tokens.background,
               fontSize: 16,
@@ -271,7 +271,7 @@ class _PracticeHero extends StatelessWidget {
                 height: 42,
                 decoration: BoxDecoration(
                   color: tokens.background.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Icon(
                   Icons.school_outlined,
@@ -390,7 +390,7 @@ class _PracticeGrid extends StatelessWidget {
       builder: (context, constraints) {
         final gap = AppSpacing.md;
         final itemWidth = (constraints.maxWidth - gap) / 2;
-        final itemHeight = itemWidth.clamp(142.0, 176.0);
+        final itemHeight = itemWidth.clamp(142.0, 176.0).toDouble();
 
         return Wrap(
           spacing: gap,
@@ -444,7 +444,7 @@ class _StudyToolCard extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               color: tokens.surfaceSecondary,
-              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
               border: Border.all(color: tokens.border),
             ),
             child: Icon(icon, size: 21, color: tokens.textPrimary),
