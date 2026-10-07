@@ -141,7 +141,7 @@ class QuizController extends Notifier<QuizState> {
     final questionCount = math.min(
       configuration.questionCount,
       _mockQuestions.length,
-    );
+    ).toInt();
     final questions = _mockQuestions.take(questionCount).toList(growable: false);
 
     ref.onDispose(() => _timer?.cancel());
