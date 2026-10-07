@@ -151,7 +151,7 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
                                         subject.id == config.subjectId,
                                   )
                                   ? config.subjectId
-                                  : availableSubjects.firstOrNull?.id,
+                                  : availableSubjects.isEmpty ? null : availableSubjects.first.id,
                           items: [
                             for (final subject in availableSubjects)
                               DropdownMenuItem(
@@ -219,7 +219,7 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
     for (final subject in subjects) {
       if (subject.id == id) return subject;
     }
-    return subjects.firstOrNull;
+    return subjects.isEmpty ? null : subjects.first;
   }
 
   Future<void> _showReadyDialog(QuizConfiguration config) async {
@@ -402,7 +402,7 @@ class _ValueSlider extends StatelessWidget {
           ],
         ),
         Slider(
-          value: value.clamp(min, max),
+          value: value.clamp(min, max).toDouble(),
           min: min,
           max: max,
           divisions: divisions,
