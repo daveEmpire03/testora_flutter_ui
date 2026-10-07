@@ -107,7 +107,7 @@ class ExamDetailsScreen extends ConsumerWidget {
             title: 'Mock examination',
             subtitle: 'Practise under timed CBT conditions',
             badge: 'Timed',
-            onTap: () => context.push('/mock-exams'),
+            onTap: () => _startQuiz(context, ref),
           ),
           const SizedBox(height: AppSpacing.section),
           TestoraCard(
