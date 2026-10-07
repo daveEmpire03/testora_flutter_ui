@@ -57,6 +57,11 @@ class _TestoraBottomNav extends StatelessWidget {
       activeIcon: Icons.bar_chart_rounded,
     ),
     _NavItem(
+      label: 'Payment',
+      icon: Icons.payments_outlined,
+      activeIcon: Icons.payments_rounded,
+    ),
+    _NavItem(
       label: 'Profile',
       icon: Icons.person_outline_rounded,
       activeIcon: Icons.person_rounded,
