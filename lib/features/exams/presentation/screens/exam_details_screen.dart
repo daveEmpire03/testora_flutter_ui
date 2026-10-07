@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/testora_widgets.dart';
-import '../../../quiz/providers/quiz_providers.dart';
 
 class ExamDetailsScreen extends ConsumerWidget {
   const ExamDetailsScreen({super.key, required this.examId});
@@ -42,8 +41,7 @@ class ExamDetailsScreen extends ConsumerWidget {
   }
 
   void _startQuiz(BuildContext context, WidgetRef ref) {
-    ref.invalidate(quizControllerProvider);
-    context.pushNamed('quiz', pathParameters: {'examId': examId});
+    context.pushNamed('quiz-setup', pathParameters: {'examId': examId});
   }
 
   @override
