@@ -38,7 +38,7 @@ class HomeScreen extends ConsumerWidget {
               delegate: SliverChildListDelegate([
                 _HomeHeader(firstName: firstName),
                 const SizedBox(height: AppSpacing.section),
-                SectionTitle(
+                const SectionTitle(
                   title: 'Available examinations',
                   subtitle: 'Choose the exam you want to prepare for',
                 ),
