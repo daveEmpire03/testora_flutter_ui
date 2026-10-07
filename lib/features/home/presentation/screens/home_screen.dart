@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../auth/providers/auth_providers.dart';
-import '../../../../shared/testora_widgets.dart';
+import '../../../exams/application/exam_catalog_providers.dart';
+import '../../../exams/domain/entities/exam_category.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -14,73 +14,137 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
-    final user = auth.user;
-    final tokens = context.tokens;
+    final categories = ref.watch(examCategoriesProvider);
     final firstName =
-        (user?.firstName.trim().isNotEmpty ?? false)
-            ? user!.firstName.trim()
+        (auth.user?.firstName.trim().isNotEmpty ?? false)
+            ? auth.user!.firstName.trim()
             : 'Student';
 
-    return TestoraScaffold(
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.xl,
-              AppSpacing.lg,
-              AppSpacing.sp40,
-            ),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _HomeHeader(firstName: firstName),
-                const SizedBox(height: AppSpacing.xxl),
-                _PracticeHero(
-                  onStart: () => context.go('/exams'),
-                ).animate().fadeIn(duration: 320.ms).slideY(
-                  begin: 0.04,
-                  end: 0,
-                  duration: 320.ms,
-                  curve: Curves.easeOutCubic,
-                ),
-                const SizedBox(height: AppSpacing.section),
-                SectionTitle(
-                  title: 'Practice',
-                  subtitle: 'Choose how you want to study',
-                  actionLabel: 'View exams',
-                  onActionPressed: () => context.go('/exams'),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _PracticeGrid(
-                  onSubjects: () => context.go('/exams'),
-                  onMockExam: () => context.push('/mock-exams'),
-                  onBookmarks: () => context.push('/profile/bookmarks'),
-                  onProgress: () => context.go('/progress'),
-                ),
-                const SizedBox(height: AppSpacing.section),
-                const SectionTitle(
-                  title: 'Study smarter',
-                  subtitle: 'Useful shortcuts for your next session',
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _StudyToolCard(
-                  icon: Icons.history_rounded,
-                  title: 'Practice history',
-                  subtitle: 'Review your previous study sessions and attempts.',
-                  onTap: () => context.push('/profile/history'),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _StudyToolCard(
-                  icon: Icons.workspace_premium_outlined,
-                  title: 'Achievements',
-                  subtitle: 'See milestones you have reached while studying.',
-                  onTap: () => context.push('/profile/achievements'),
-                ),
-              ]),
-            ),
+    return Scaffold(
+      backgroundColor: AppColors.brandDeep,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.brandDeepPurple,
+              AppColors.brandPlum,
+              AppColors.brandDeep,
+            ],
           ),
-        ],
+        ),
+        child: SafeArea(
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
+                sliver: SliverToBoxAdapter(
+                  child: _HomeHeader(firstName: firstName),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 10)),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverToBoxAdapter(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 3,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: AppColors.brandGold,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
+                      const SizedBox(width: 9),
+                      const Text(
+                        'Available Examinations',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 14)),
+              categories.when(
+                loading:
+                    () => const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    ),
+                error:
+                    (error, _) => SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            'Could not load examinations.\n$error',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                data:
+                    (items) => SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverGrid(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final item = items[index];
+                            return _ExamCategoryCard(
+                                  category: item,
+                                  onTap: () {
+                                    ref
+                                        .read(
+                                          selectedExamCategoryProvider.notifier,
+                                        )
+                                        .select(item.id);
+                                    context.go('/exams');
+                                  },
+                                )
+                                .animate(delay: (45 * index).ms)
+                                .fadeIn(duration: 230.ms)
+                                .slideY(
+                                  begin: 0.05,
+                                  end: 0,
+                                  duration: 230.ms,
+                                );
+                          },
+                          childCount: items.length,
+                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 0.92,
+                            ),
+                      ),
+                    ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 28)),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverToBoxAdapter(
+                  child: _ContinuePracticeCard(
+                    onTap: () => context.go('/exams'),
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 28)),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -93,392 +157,209 @@ class _HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.tokens;
-
     return Row(
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Welcome back',
+              const Text(
+                'Good Evening 👋',
                 style: TextStyle(
-                  color: tokens.textSecondary,
-                  fontSize: 13,
+                  color: Color(0xB3FFFFFF),
+                  fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: AppSpacing.xs),
+              const SizedBox(height: 4),
               Text(
-                firstName,
+                'Welcome Back, $firstName!',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: tokens.textPrimary,
-                  fontSize: 26,
-                  height: 1.05,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  height: 1.1,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.8,
+                  letterSpacing: -0.4,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(width: AppSpacing.md),
-        _HeaderIconButton(
-          icon: Icons.notifications_none_rounded,
-          semanticLabel: 'Notifications',
-          onTap: () => context.push('/profile/notifications'),
+        const SizedBox(width: 12),
+        Material(
+          color: Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: () => context.push('/profile/notifications'),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.14),
+                ),
+              ),
+              child: const Icon(
+                Icons.notifications_none_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
         ),
-        const SizedBox(width: AppSpacing.sm),
-        _ProfileAvatar(name: firstName),
       ],
     );
   }
 }
 
-class _HeaderIconButton extends StatelessWidget {
-  const _HeaderIconButton({
-    required this.icon,
-    required this.semanticLabel,
+class _ExamCategoryCard extends StatelessWidget {
+  const _ExamCategoryCard({
+    required this.category,
     required this.onTap,
   });
 
-  final IconData icon;
-  final String semanticLabel;
+  final ExamCategory category;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.tokens;
-
-    return Semantics(
-      button: true,
-      label: semanticLabel,
-      child: Material(
-        color: tokens.surfaceSecondary,
-        borderRadius: BorderRadius.circular(AppRadius.button),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.button),
-          child: Container(
-            width: 44,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.button),
-              border: Border.all(color: tokens.border),
-            ),
-            child: Icon(icon, size: 21, color: tokens.textPrimary),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({required this.name});
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-
     return Material(
-      color: Colors.transparent,
+      color: Colors.white.withValues(alpha: 0.045),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
-        onTap: () => context.go('/profile'),
-        customBorder: const CircleBorder(),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
         child: Container(
-          width: 44,
-          height: 44,
-          alignment: Alignment.center,
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: tokens.textPrimary,
-            border: Border.all(color: tokens.cardBorder),
-          ),
-          child: Text(
-            (name.isNotEmpty ? name[0] : 'S').toUpperCase(),
-            style: TextStyle(
-              color: tokens.background,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.17),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PracticeHero extends StatelessWidget {
-  const _PracticeHero({required this.onStart});
-
-  final VoidCallback onStart;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
-        color: tokens.textPrimary,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -22,
-            top: -28,
-            child: IgnorePointer(
-              child: Container(
-                width: 116,
-                height: 116,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: tokens.background.withValues(alpha: 0.10),
-                    width: 18,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            right: 20,
-            bottom: -50,
-            child: IgnorePointer(
-              child: Container(
-                width: 94,
-                height: 94,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: tokens.background.withValues(alpha: 0.06),
-                ),
-              ),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 50,
+                height: 50,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: tokens.background.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Icon(
-                  Icons.school_outlined,
-                  color: tokens.background,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                'Ready for your next\npractice session?',
-                style: TextStyle(
-                  color: tokens.background,
-                  fontSize: 22,
-                  height: 1.2,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Choose an exam, practise at your pace, and review every answer.',
-                style: TextStyle(
-                  color: tokens.background.withValues(alpha: 0.72),
-                  fontSize: 13,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Material(
-                  color: tokens.background,
-                  borderRadius: BorderRadius.circular(AppRadius.button),
-                  child: InkWell(
-                    onTap: onStart,
-                    borderRadius: BorderRadius.circular(AppRadius.button),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Start practice',
-                            style: TextStyle(
-                              color: tokens.textPrimary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Icon(
-                            Icons.arrow_forward_rounded,
-                            size: 18,
-                            color: tokens.textPrimary,
-                          ),
-                        ],
-                      ),
-                    ),
+                  color: Colors.white.withValues(alpha: 0.10),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
                   ),
+                ),
+                child: Text(
+                  category.shortCode,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                category.name.toUpperCase(),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                category.description,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0x8FFFFFFF),
+                  fontSize: 9.5,
+                  height: 1.3,
                 ),
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _PracticeGrid extends StatelessWidget {
-  const _PracticeGrid({
-    required this.onSubjects,
-    required this.onMockExam,
-    required this.onBookmarks,
-    required this.onProgress,
-  });
+class _ContinuePracticeCard extends StatelessWidget {
+  const _ContinuePracticeCard({required this.onTap});
 
-  final VoidCallback onSubjects;
-  final VoidCallback onMockExam;
-  final VoidCallback onBookmarks;
-  final VoidCallback onProgress;
-
-  @override
-  Widget build(BuildContext context) {
-    final cards = <Widget>[
-      TestoraGridCard(
-        icon: Icons.menu_book_outlined,
-        title: 'Subjects',
-        subtitle: 'Browse all exams',
-        onTap: onSubjects,
-      ),
-      TestoraGridCard(
-        icon: Icons.timer_outlined,
-        title: 'Mock exam',
-        subtitle: 'Timed CBT practice',
-        onTap: onMockExam,
-      ),
-      TestoraGridCard(
-        icon: Icons.bookmark_border_rounded,
-        title: 'Bookmarks',
-        subtitle: 'Saved questions',
-        onTap: onBookmarks,
-      ),
-      TestoraGridCard(
-        icon: Icons.insights_outlined,
-        title: 'Progress',
-        subtitle: 'Track performance',
-        onTap: onProgress,
-      ),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final gap = AppSpacing.md;
-        final itemWidth = (constraints.maxWidth - gap) / 2;
-        final itemHeight = itemWidth.clamp(142.0, 176.0).toDouble();
-
-        return Wrap(
-          spacing: gap,
-          runSpacing: gap,
-          children: [
-            for (var i = 0; i < cards.length; i++)
-              SizedBox(
-                    width: itemWidth,
-                    height: itemHeight,
-                    child: cards[i],
-                  )
-                  .animate(delay: (60 * i).ms)
-                  .fadeIn(duration: 260.ms)
-                  .slideY(
-                    begin: 0.05,
-                    end: 0,
-                    duration: 260.ms,
-                    curve: Curves.easeOutCubic,
-                  ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _StudyToolCard extends StatelessWidget {
-  const _StudyToolCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.tokens;
-
-    return TestoraCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(AppSpacing.lg),
+    return Container(
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.15),
+        ),
+      ),
       child: Row(
         children: [
           Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: tokens.surfaceSecondary,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-              border: Border.all(color: tokens.border),
+              color: AppColors.brandPurple.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(13),
             ),
-            child: Icon(icon, size: 21, color: tokens.textPrimary),
+            child: const Icon(
+              Icons.auto_stories_outlined,
+              color: Colors.white,
+              size: 21,
+            ),
           ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
+          const SizedBox(width: 13),
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  'Ready to practise?',
                   style: TextStyle(
-                    color: tokens.textPrimary,
-                    fontSize: 14,
+                    color: Colors.white,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 3),
+                SizedBox(height: 3),
                 Text(
-                  subtitle,
+                  'Choose an examination and start a focused session.',
                   style: TextStyle(
-                    color: tokens.textSecondary,
-                    fontSize: 12,
+                    color: Color(0xA6FFFFFF),
+                    fontSize: 11,
                     height: 1.4,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
-          Icon(
-            Icons.chevron_right_rounded,
-            size: 20,
-            color: tokens.textSecondary,
+          IconButton(
+            onPressed: onTap,
+            style: IconButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.white.withValues(alpha: 0.08),
+            ),
+            icon: const Icon(Icons.arrow_forward_rounded, size: 19),
           ),
         ],
       ),
@@ -491,13 +372,8 @@ class CategoriesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Categories')),
-      body: const TestoraEmptyState(
-        icon: Icons.category_outlined,
-        title: 'Categories',
-        message: 'Browse exam categories here.',
-      ),
+    return const Scaffold(
+      body: Center(child: Text('Categories')),
     );
   }
 }
