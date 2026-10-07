@@ -23,10 +23,18 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
   @override
   void initState() {
     super.initState();
-    final categoryId = ref.read(selectedExamCategoryProvider);
-    ref
-        .read(quizSetupProvider.notifier)
-        .resetForExam(categoryId, subjectId: widget.subjectId);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final current = ref.read(quizSetupProvider);
+      if (current.subjectId == widget.subjectId) return;
+
+      final categoryId = ref.read(selectedExamCategoryProvider);
+      ref
+          .read(quizSetupProvider.notifier)
+          .resetForExam(categoryId, subjectId: widget.subjectId);
+    });
   }
 
   @override
