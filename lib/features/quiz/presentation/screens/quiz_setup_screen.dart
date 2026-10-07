@@ -90,7 +90,7 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
                     children: [
                       _ValueSlider(
                         label: 'Questions',
-                        valueLabel: '\${config.questionCount}',
+                        valueLabel: '${config.questionCount}',
                         value: config.questionCount.toDouble().clamp(1, 5),
                         min: 1,
                         max: 5,
@@ -107,7 +107,7 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
                       const SizedBox(height: AppSpacing.xl),
                       _ValueSlider(
                         label: 'Time limit',
-                        valueLabel: '\${config.durationMinutes} min',
+                        valueLabel: '${config.durationMinutes} min',
                         value:
                             config.durationMinutes.toDouble().clamp(5, 120),
                         min: 5,
@@ -187,7 +187,7 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
                           '': 'All years',
                           for (final year
                               in selectedSubject?.years ?? const <int>[])
-                            '\$year': '\$year',
+                            '$year': '$year',
                         },
                         onChanged:
                             (value) => controller.setYear(
@@ -226,9 +226,9 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
             icon: const Icon(Icons.timer_outlined, size: 34),
             title: const Text('Quiz ready'),
             content: Text(
-              'You are about to start a \${config.durationMinutes}-minute '
-              'quiz with \${config.questionCount} question'
-              '\${config.questionCount == 1 ? '' : 's'}.',
+              'You are about to start a ${config.durationMinutes}-minute '
+              'quiz with ${config.questionCount} question'
+              '${config.questionCount == 1 ? '' : 's'}.',
               textAlign: TextAlign.center,
             ),
             actions: [
@@ -393,10 +393,10 @@ class _ModeSelector extends StatelessWidget {
               if (index > 0) const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: _ModeCard(
-                  icon: options[index].\$2,
-                  label: options[index].\$3,
-                  selected: selected == options[index].\$1,
-                  onTap: () => onSelected(options[index].\$1),
+                  icon: options[index].$2,
+                  label: options[index].$3,
+                  selected: selected == options[index].$1,
+                  onTap: () => onSelected(options[index].$1),
                 ),
               ),
             ],
