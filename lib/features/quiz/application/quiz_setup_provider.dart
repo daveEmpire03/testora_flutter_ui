@@ -19,11 +19,11 @@ class QuizSetupController extends Notifier<QuizConfiguration> {
   }
 
   void setQuestionCount(int value) {
-    state = state.copyWith(questionCount: value.clamp(1, 50));
+    state = state.copyWith(questionCount: value.clamp(1, 50).toInt());
   }
 
   void setDurationMinutes(int value) {
-    state = state.copyWith(durationMinutes: value.clamp(1, 180));
+    state = state.copyWith(durationMinutes: value.clamp(1, 180).toInt());
   }
 
   void setMode(QuizMode value) {
