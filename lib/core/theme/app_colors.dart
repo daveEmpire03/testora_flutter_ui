@@ -35,18 +35,11 @@ abstract final class AppColors {
   static const textSecondaryDark = Color(0xFF9CA3AF);
   static const textMutedDark = Color(0xFF6B7280);
 
-  // ─── Testora brand accents (derived from the reference experience) ───────
-  static const brandPurple = Color(0xFF7C3AED);
-  static const brandViolet = Color(0xFF9333EA);
-  static const brandDeepPurple = Color(0xFF4C1D95);
-  static const brandPlum = Color(0xFF2A0B3D);
-  static const brandDeep = Color(0xFF160821);
-  static const brandGold = Color(0xFFFBBF24);
-
-  static const primaryLight = brandPurple;
-  static const primaryDark = Color(0xFFA855F7);
+  // ─── Academic Primary Accents (Black & White) ─────────────────
+  static const primaryLight = Color(0xFF111111);
+  static const primaryDark = Color(0xFFFFFFFF);
   static const onPrimaryLight = Color(0xFFFFFFFF);
-  static const onPrimaryDark = Color(0xFFFFFFFF);
+  static const onPrimaryDark = Color(0xFF111111);
 
   // ─── Semantic Status Colors ───────────────────────────────────
   static const success = Color(0xFF10B981); // Emerald
@@ -65,10 +58,10 @@ abstract final class AppColors {
   // ─── Legacy / Compatibility Bridges ───────────────────────────
   // Preserved so un-refactored screens compile safely until their phases.
   static const surface = surfaceSecondaryLight;
-  static const purple = brandPurple;
-  static const deepPurple = brandDeepPurple;
-  static const pink = brandViolet;
-  static const magenta = Color(0xFFC026D3);
+  static const purple = Color(0xFF111111);
+  static const deepPurple = Color(0xFF1F2937);
+  static const pink = Color(0xFF374151);
+  static const magenta = Color(0xFF4B5563);
 }
 
 /// Standardized spacing scale: 4, 8, 12, 16, 20, 24, 32, 40
