@@ -3,16 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/testora_widgets.dart';
 import '../../../exams/application/exam_catalog_providers.dart';
 import '../../../exams/domain/entities/exam_subject.dart';
 import '../../domain/quiz_configuration.dart';
 import '../../providers/quiz_providers.dart';
 
 class QuizSetupScreen extends ConsumerStatefulWidget {
-  const QuizSetupScreen({
-    super.key,
-    required this.subjectId,
-  });
+  const QuizSetupScreen({super.key, required this.subjectId});
 
   final String subjectId;
 
@@ -24,10 +23,10 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
   @override
   void initState() {
     super.initState();
-    final category = ref.read(selectedExamCategoryProvider);
+    final categoryId = ref.read(selectedExamCategoryProvider);
     ref
         .read(quizSetupProvider.notifier)
-        .resetForExam(category, subjectId: widget.subjectId);
+        .resetForExam(categoryId, subjectId: widget.subjectId);
   }
 
   @override
@@ -36,227 +35,220 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
     final categories = ref.watch(examCategoriesProvider);
     final subjects = ref.watch(examSubjectsProvider(config.examCategoryId));
     final controller = ref.read(quizSetupProvider.notifier);
+    final tokens = context.tokens;
 
     return Scaffold(
-      backgroundColor: AppColors.brandDeep,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        title: const Text(
-          'Customize Your Quiz',
-          style: TextStyle(color: Colors.white),
-        ),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.brandDeepPurple,
-              AppColors.brandPlum,
-              AppColors.brandDeep,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          top: false,
-          child: subjects.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
-            error: (error, _) => _SetupError(message: '$error'),
-            data: (availableSubjects) {
-              final selectedSubject = _subjectFor(
-                availableSubjects,
-                config.subjectId,
-              );
+      appBar: AppBar(title: const Text('Customize quiz')),
+      body: SafeArea(
+        child: subjects.when(
+          loading: () => const TestoraLoading(message: 'Loading quiz setup...'),
+          error:
+              (error, _) => TestoraEmptyState(
+                icon: Icons.error_outline_rounded,
+                title: 'Could not load quiz setup',
+                message: '$error',
+              ),
+          data: (availableSubjects) {
+            final selectedSubject = _findSubject(
+              availableSubjects,
+              config.subjectId,
+            );
 
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
-                children: [
-                  const _SetupHeader(),
-                  const SizedBox(height: 18),
-                  _GlassSection(
-                    icon: Icons.tune_rounded,
-                    title: 'Quiz Configuration',
-                    child: Column(
-                      children: [
-                        _ValueSlider(
-                          label: 'Number of questions',
-                          valueLabel: '${config.questionCount}',
-                          value: config.questionCount.toDouble(),
-                          min: 1,
-                          max: 50,
-                          divisions: 49,
-                          onChanged:
-                              (value) =>
-                                  controller.setQuestionCount(value.round()),
-                        ),
-                        const SizedBox(height: 18),
-                        _ModeSelector(
-                          selected: config.mode,
-                          onSelected: controller.setMode,
-                        ),
-                        const SizedBox(height: 18),
-                        _ValueSlider(
-                          label: 'Time in minutes',
-                          valueLabel: '${config.durationMinutes} mins',
-                          value: config.durationMinutes.toDouble(),
-                          min: 5,
-                          max: 120,
-                          divisions: 23,
-                          onChanged:
-                              (value) =>
-                                  controller.setDurationMinutes(value.round()),
-                        ),
-                      ],
-                    ),
+            return ListView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                AppSpacing.sp40,
+              ),
+              children: [
+                Text(
+                  'Build your practice session',
+                  style: TextStyle(
+                    color: tokens.textPrimary,
+                    fontSize: 24,
+                    height: 1.15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.6,
                   ),
-                  const SizedBox(height: 14),
-                  _GlassSection(
-                    icon: Icons.library_books_outlined,
-                    title: 'Content Selection',
-                    child: Column(
-                      children: [
-                        categories.when(
-                          loading: () => const _FieldSkeleton(),
-                          error: (_, _) => const SizedBox.shrink(),
-                          data:
-                              (items) => _DropdownField<String>(
-                                label: 'Question Source',
-                                value: config.examCategoryId,
-                                items: [
-                                  for (final item in items)
-                                    DropdownMenuItem(
-                                      value: item.id,
-                                      child: Text(item.name.toUpperCase()),
-                                    ),
-                                ],
-                                onChanged: (value) {
-                                  if (value == null) return;
-                                  ref
-                                      .read(selectedExamCategoryProvider.notifier)
-                                      .select(value);
-                                  controller.setExamCategory(value);
-                                },
-                              ),
-                        ),
-                        const SizedBox(height: 14),
-                        _DropdownField<String>(
-                          label: 'Subjects',
-                          value:
-                              availableSubjects.any(
-                                    (subject) =>
-                                        subject.id == config.subjectId,
-                                  )
-                                  ? config.subjectId
-                                  : availableSubjects.isEmpty ? null : availableSubjects.first.id,
-                          items: [
-                            for (final subject in availableSubjects)
-                              DropdownMenuItem(
-                                value: subject.id,
-                                child: Text(subject.name),
-                              ),
-                          ],
-                          onChanged: (value) {
-                            if (value != null) controller.setSubject(value);
-                          },
-                        ),
-                        const SizedBox(height: 14),
-                        _DropdownField<String?>(
-                          label: 'Topic',
-                          value: config.topic,
-                          items: [
-                            const DropdownMenuItem<String?>(
-                              value: null,
-                              child: Text('All topics'),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Choose the number of questions, time limit and content you want to practise.',
+                  style: TextStyle(
+                    color: tokens.textSecondary,
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.section),
+                _SetupSection(
+                  icon: Icons.tune_rounded,
+                  title: 'Quiz configuration',
+                  child: Column(
+                    children: [
+                      _ValueSlider(
+                        label: 'Questions',
+                        valueLabel: '\${config.questionCount}',
+                        value: config.questionCount.toDouble().clamp(1, 5),
+                        min: 1,
+                        max: 5,
+                        divisions: 4,
+                        onChanged:
+                            (value) =>
+                                controller.setQuestionCount(value.round()),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      _ModeSelector(
+                        selected: config.mode,
+                        onSelected: controller.setMode,
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      _ValueSlider(
+                        label: 'Time limit',
+                        valueLabel: '\${config.durationMinutes} min',
+                        value:
+                            config.durationMinutes.toDouble().clamp(5, 120),
+                        min: 5,
+                        max: 120,
+                        divisions: 23,
+                        onChanged:
+                            (value) =>
+                                controller.setDurationMinutes(value.round()),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _SetupSection(
+                  icon: Icons.library_books_outlined,
+                  title: 'Content selection',
+                  child: Column(
+                    children: [
+                      categories.when(
+                        loading: () => const _FieldSkeleton(),
+                        error: (_, _) => const SizedBox.shrink(),
+                        data:
+                            (items) => _SelectField(
+                              label: 'Question source',
+                              value: config.examCategoryId,
+                              items: {
+                                for (final item in items) item.id: item.name,
+                              },
+                              onChanged: (value) {
+                                ref
+                                    .read(
+                                      selectedExamCategoryProvider.notifier,
+                                    )
+                                    .select(value);
+                                controller.setExamCategory(value);
+                              },
                             ),
-                            for (final topic
-                                in selectedSubject?.topics ?? const <String>[])
-                              DropdownMenuItem<String?>(
-                                value: topic,
-                                child: Text(topic),
-                              ),
-                          ],
-                          onChanged: controller.setTopic,
-                        ),
-                        const SizedBox(height: 14),
-                        _DropdownField<int?>(
-                          label: 'Year',
-                          value: config.year,
-                          items: [
-                            const DropdownMenuItem<int?>(
-                              value: null,
-                              child: Text('All years'),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      _SelectField(
+                        label: 'Subject',
+                        value:
+                            availableSubjects.any(
+                                  (subject) =>
+                                      subject.id == config.subjectId,
+                                )
+                                ? config.subjectId
+                                : (availableSubjects.isEmpty
+                                    ? ''
+                                    : availableSubjects.first.id),
+                        items: {
+                          for (final subject in availableSubjects)
+                            subject.id: subject.name,
+                        },
+                        onChanged: controller.setSubject,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      _SelectField(
+                        label: 'Topic',
+                        value: config.topic ?? '',
+                        items: {
+                          '': 'All topics',
+                          for (final topic
+                              in selectedSubject?.topics ?? const <String>[])
+                            topic: topic,
+                        },
+                        onChanged:
+                            (value) => controller.setTopic(
+                              value.isEmpty ? null : value,
                             ),
-                            for (final year
-                                in selectedSubject?.years ?? const <int>[])
-                              DropdownMenuItem<int?>(
-                                value: year,
-                                child: Text('$year'),
-                              ),
-                          ],
-                          onChanged: controller.setYear,
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      _SelectField(
+                        label: 'Year',
+                        value: config.year?.toString() ?? '',
+                        items: {
+                          '': 'All years',
+                          for (final year
+                              in selectedSubject?.years ?? const <int>[])
+                            '\$year': '\$year',
+                        },
+                        onChanged:
+                            (value) => controller.setYear(
+                              value.isEmpty ? null : int.tryParse(value),
+                            ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 22),
-                  _TakeQuizButton(
-                    onPressed: () => _showReadyDialog(config),
-                  ),
-                ],
-              );
-            },
-          ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                TestoraButton(
+                  label: 'Take quiz',
+                  icon: Icons.play_arrow_rounded,
+                  onTap: () => _confirmStart(config),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  ExamSubject? _subjectFor(List<ExamSubject> subjects, String id) {
+  ExamSubject? _findSubject(List<ExamSubject> subjects, String id) {
     for (final subject in subjects) {
       if (subject.id == id) return subject;
     }
     return subjects.isEmpty ? null : subjects.first;
   }
 
-  Future<void> _showReadyDialog(QuizConfiguration config) async {
-    final start = await showDialog<bool>(
+  Future<void> _confirmStart(QuizConfiguration config) async {
+    final shouldStart = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          icon: const Icon(
-            Icons.timer_outlined,
-            size: 38,
-            color: AppColors.brandPurple,
-          ),
-          title: const Text('Quiz Timer'),
-          content: Text(
-            'Your ${config.durationMinutes}-minute quiz with '
-            '${config.questionCount} question'
-            '${config.questionCount == 1 ? '' : 's'} is ready.',
-            textAlign: TextAlign.center,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Close'),
+      builder:
+          (dialogContext) => AlertDialog(
+            icon: const Icon(Icons.timer_outlined, size: 34),
+            title: const Text('Quiz ready'),
+            content: Text(
+              'You are about to start a \${config.durationMinutes}-minute '
+              'quiz with \${config.questionCount} question'
+              '\${config.questionCount == 1 ? '' : 's'}.',
+              textAlign: TextAlign.center,
             ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Start'),
-            ),
-          ],
-        );
-      },
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Start'),
+              ),
+            ],
+          ),
     );
 
-    if (start != true || !mounted) return;
+    if (shouldStart != true || !mounted) return;
 
     ref.invalidate(quizControllerProvider);
     final current = ref.read(quizSetupProvider);
+
     context.pushNamed(
       'quiz',
       pathParameters: {'examId': current.subjectId},
@@ -264,46 +256,8 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
   }
 }
 
-class _SetupHeader extends StatelessWidget {
-  const _SetupHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Column(
-      children: [
-        CircleAvatar(
-          radius: 30,
-          backgroundColor: Color(0x33FFFFFF),
-          child: Icon(
-            Icons.alarm_on_rounded,
-            color: AppColors.brandGold,
-            size: 30,
-          ),
-        ),
-        SizedBox(height: 12),
-        Text(
-          'Customize Your Quiz',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        SizedBox(height: 4),
-        Text(
-          'Configure your perfect practice session',
-          style: TextStyle(
-            color: Color(0xB3FFFFFF),
-            fontSize: 12,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _GlassSection extends StatelessWidget {
-  const _GlassSection({
+class _SetupSection extends StatelessWidget {
+  const _SetupSection({
     required this.icon,
     required this.title,
     required this.child,
@@ -315,33 +269,36 @@ class _GlassSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.055),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.16),
-        ),
-      ),
+    final tokens = context.tokens;
+
+    return TestoraCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: AppColors.brandGold, size: 19),
-              const SizedBox(width: 8),
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: tokens.surfaceSecondary,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  border: Border.all(color: tokens.border),
+                ),
+                child: Icon(icon, size: 19, color: tokens.textPrimary),
+              ),
+              const SizedBox(width: AppSpacing.md),
               Text(
                 title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
+                style: TextStyle(
+                  color: tokens.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: AppSpacing.xl),
           child,
         ],
       ),
@@ -370,6 +327,8 @@ class _ValueSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Column(
       children: [
         Row(
@@ -377,37 +336,21 @@ class _ValueSlider extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
+                style: TextStyle(
+                  color: tokens.textPrimary,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(99),
-              ),
-              child: Text(
-                valueLabel,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
+            TestoraBadge(label: valueLabel),
           ],
         ),
         Slider(
-          value: value.clamp(min, max).toDouble(),
+          value: value,
           min: min,
           max: max,
           divisions: divisions,
-          activeColor: AppColors.brandGold,
-          inactiveColor: Colors.white24,
           onChanged: onChanged,
         ),
       ],
@@ -426,7 +369,7 @@ class _ModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const items = <(QuizMode, IconData, String)>[
+    const options = <(QuizMode, IconData, String)>[
       (QuizMode.multiple, Icons.library_books_outlined, 'Multiple'),
       (QuizMode.single, Icons.notes_rounded, 'Single'),
       (QuizMode.flash, Icons.style_outlined, 'Flash'),
@@ -435,25 +378,25 @@ class _ModeSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Quiz Type',
+        Text(
+          'Quiz type',
           style: TextStyle(
-            color: Colors.white,
-            fontSize: 12,
+            color: context.tokens.textPrimary,
+            fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSpacing.md),
         Row(
           children: [
-            for (var index = 0; index < items.length; index++) ...[
-              if (index > 0) const SizedBox(width: 8),
+            for (var index = 0; index < options.length; index++) ...[
+              if (index > 0) const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: _ModeCard(
-                  icon: items[index].$2,
-                  label: items[index].$3,
-                  selected: selected == items[index].$1,
-                  onTap: () => onSelected(items[index].$1),
+                  icon: options[index].\$2,
+                  label: options[index].\$3,
+                  selected: selected == options[index].\$1,
+                  onTap: () => onSelected(options[index].\$1),
                 ),
               ),
             ],
@@ -479,36 +422,39 @@ class _ModeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Material(
-      color:
-          selected
-              ? AppColors.brandPurple.withValues(alpha: 0.65)
-              : Colors.white.withValues(alpha: 0.055),
-      borderRadius: BorderRadius.circular(12),
+      color: selected ? tokens.textPrimary : tokens.surfaceSecondary,
+      borderRadius: BorderRadius.circular(AppRadius.button),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.button),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 6),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.md,
+          ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.button),
             border: Border.all(
-              color:
-                  selected
-                      ? Colors.white.withValues(alpha: 0.65)
-                      : Colors.white.withValues(alpha: 0.16),
+              color: selected ? tokens.textPrimary : tokens.border,
             ),
           ),
           child: Column(
             children: [
-              Icon(icon, color: Colors.white, size: 20),
-              const SizedBox(height: 6),
+              Icon(
+                icon,
+                size: 20,
+                color: selected ? tokens.background : tokens.textPrimary,
+              ),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
+                style: TextStyle(
+                  color: selected ? tokens.background : tokens.textPrimary,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -519,8 +465,8 @@ class _ModeCard extends StatelessWidget {
   }
 }
 
-class _DropdownField<T> extends StatelessWidget {
-  const _DropdownField({
+class _SelectField extends StatelessWidget {
+  const _SelectField({
     required this.label,
     required this.value,
     required this.items,
@@ -528,77 +474,45 @@ class _DropdownField<T> extends StatelessWidget {
   });
 
   final String label;
-  final T? value;
-  final List<DropdownMenuItem<T>> items;
-  final ValueChanged<T?> onChanged;
+  final String value;
+  final Map<String, String> items;
+  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final safeValue =
+        items.containsKey(value)
+            ? value
+            : (items.isEmpty ? null : items.keys.first);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
-            color: Color(0xCCFFFFFF),
-            fontSize: 11,
+          style: TextStyle(
+            color: tokens.textPrimary,
+            fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 7),
-        DropdownButtonFormField<T>(
-          value: value,
+        const SizedBox(height: AppSpacing.sm),
+        DropdownButtonFormField<String>(
+          initialValue: safeValue,
           isExpanded: true,
-          dropdownColor: AppColors.brandPlum,
-          iconEnabledColor: Colors.white,
-          style: const TextStyle(color: Colors.white, fontSize: 12),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.045),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 13,
-              vertical: 12,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.15),
+          items: [
+            for (final entry in items.entries)
+              DropdownMenuItem(
+                value: entry.key,
+                child: Text(entry.value),
               ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.15),
-              ),
-            ),
-          ),
-          items: items,
-          onChanged: onChanged,
+          ],
+          onChanged: (value) {
+            if (value != null) onChanged(value);
+          },
         ),
       ],
-    );
-  }
-}
-
-class _TakeQuizButton extends StatelessWidget {
-  const _TakeQuizButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      child: FilledButton.icon(
-        onPressed: onPressed,
-        icon: const Icon(Icons.send_rounded, size: 18),
-        label: const Text('Take Quiz'),
-        style: FilledButton.styleFrom(
-          backgroundColor: AppColors.brandPurple,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-          shape: const StadiumBorder(),
-        ),
-      ),
     );
   }
 }
@@ -608,32 +522,6 @@ class _FieldSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
-      ),
-    );
-  }
-}
-
-class _SetupError extends StatelessWidget {
-  const _SetupError({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white),
-        ),
-      ),
-    );
+    return const TestoraSkeleton(height: 54);
   }
 }
