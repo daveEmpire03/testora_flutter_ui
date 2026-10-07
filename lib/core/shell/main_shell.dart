@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../theme/app_colors.dart';
-import '../theme/app_theme.dart';
 
 class MainShell extends StatelessWidget {
   const MainShell({super.key, required this.navigationShell});
+
   final StatefulNavigationShell navigationShell;
 
   void _onDestinationSelected(int index) {
@@ -17,10 +17,8 @@ class MainShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.tokens;
-
     return Scaffold(
-      backgroundColor: tokens.background,
+      backgroundColor: AppColors.brandDeep,
       body: navigationShell,
       bottomNavigationBar: _TestoraBottomNav(
         currentIndex: navigationShell.currentIndex,
@@ -30,15 +28,14 @@ class MainShell extends StatelessWidget {
   }
 }
 
-// =============================================================================
-// COMPACT ELEVATED BOTTOM NAVIGATION
-// =============================================================================
-
 class _TestoraBottomNav extends StatelessWidget {
+  const _TestoraBottomNav({
+    required this.currentIndex,
+    required this.onTap,
+  });
+
   final int currentIndex;
   final ValueChanged<int> onTap;
-
-  const _TestoraBottomNav({required this.currentIndex, required this.onTap});
 
   static const _items = <_NavItem>[
     _NavItem(
@@ -53,8 +50,8 @@ class _TestoraBottomNav extends StatelessWidget {
     ),
     _NavItem(
       label: 'Progress',
-      icon: Icons.bar_chart_outlined,
-      activeIcon: Icons.bar_chart_rounded,
+      icon: Icons.insights_outlined,
+      activeIcon: Icons.insights_rounded,
     ),
     _NavItem(
       label: 'Profile',
@@ -65,89 +62,71 @@ class _TestoraBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.tokens;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? tokens.surface : tokens.surface,
-        border: Border(top: BorderSide(color: tokens.border, width: 1)),
+        color: const Color(0xFF1B0A25),
+        border: Border(
+          top: BorderSide(
+            color: Colors.white.withValues(alpha: 0.10),
+          ),
+        ),
       ),
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 60,
+          height: 62,
           child: Row(
-            children: List.generate(_items.length, (i) {
-              final item = _items[i];
-              final isSelected = i == currentIndex;
+            children: List.generate(_items.length, (index) {
+              final item = _items[index];
+              final selected = currentIndex == index;
 
               return Expanded(
-                child: InkWell(
-                  onTap: () => onTap(i),
-                  splashColor: tokens.textPrimary.withValues(alpha: 0.04),
-                  highlightColor: Colors.transparent,
-                  child: Center(
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeInOut,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: 4,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            curve: Curves.easeInOut,
-                            width: isSelected ? 40 : 36,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color:
-                                  isSelected
-                                      ? (isDark
-                                          ? tokens.surfaceSecondary
-                                          : tokens.surfaceSecondary)
-                                      : Colors.transparent,
-                              borderRadius: BorderRadius.circular(AppRadius.sm),
-                              border:
-                                  isSelected
-                                      ? Border.all(
-                                        color: tokens.cardBorder,
-                                        width: 1,
-                                      )
-                                      : null,
-                            ),
-                            child: Icon(
-                              isSelected ? item.activeIcon : item.icon,
-                              size: 20,
-                              color:
-                                  isSelected
-                                      ? tokens.textPrimary
-                                      : tokens.textSecondary,
-                            ),
+                child: Semantics(
+                  selected: selected,
+                  button: true,
+                  label: item.label,
+                  child: InkWell(
+                    onTap: () => onTap(index),
+                    splashColor: Colors.white10,
+                    highlightColor: Colors.transparent,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeOutCubic,
+                          width: selected ? 46 : 34,
+                          height: 27,
+                          decoration: BoxDecoration(
+                            color:
+                                selected
+                                    ? const Color(0xFFF5F0FA)
+                                    : Colors.transparent,
+                            borderRadius: BorderRadius.circular(99),
                           ),
-                          const SizedBox(height: 3),
-                          Text(
-                            item.label,
-                            maxLines: 1,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight:
-                                  isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                              color:
-                                  isSelected
-                                      ? tokens.textPrimary
-                                      : tokens.textSecondary,
-                              letterSpacing: 0.1,
-                            ),
+                          child: Icon(
+                            selected ? item.activeIcon : item.icon,
+                            size: 19,
+                            color:
+                                selected
+                                    ? AppColors.brandPurple
+                                    : const Color(0xB3FFFFFF),
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          item.label,
+                          style: TextStyle(
+                            color:
+                                selected
+                                    ? AppColors.brandGold
+                                    : const Color(0xB3FFFFFF),
+                            fontSize: 9.5,
+                            fontWeight:
+                                selected ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -161,13 +140,13 @@ class _TestoraBottomNav extends StatelessWidget {
 }
 
 class _NavItem {
-  final String label;
-  final IconData icon;
-  final IconData activeIcon;
-
   const _NavItem({
     required this.label,
     required this.icon,
     required this.activeIcon,
   });
+
+  final String label;
+  final IconData icon;
+  final IconData activeIcon;
 }
