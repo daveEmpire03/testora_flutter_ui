@@ -1,4 +1,4 @@
-﻿name: testora_flutter_ui
+name: testora_flutter_ui
 description: Testora mobile exam preparation UI.
 publish_to: "none"
 version: 1.0.0+1
@@ -28,30 +28,15 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/images/
-    - assets/icons/
 
 flutter_native_splash:
   color: "#FFFFFF"
-  color_dark: "#0F1117"
-  image: assets/images/splash_logo.png
-  image_dark: assets/images/splash_logo_dark.png
+  color_dark: "#090909"
   android: true
   ios: true
   web: false
   android_12:
     color: "#FFFFFF"
-    color_dark: "#0F1117"
-    image: assets/images/android12_splash.png
-    image_dark: assets/images/android12_splash_dark.png
+    color_dark: "#090909"
     icon_background_color: "#FFFFFF"
-    icon_background_color_dark: "#0F1117"
-
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/icon/app_icon.png"
-  adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
-  remove_alpha_ios: true
+    icon_background_color_dark: "#090909"
