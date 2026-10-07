@@ -25,7 +25,7 @@ class QuizQuestion {
     required this.options,
     required this.correctIndex,
     required this.explanation,
-    this.sourceLabel = 'Testora Question Bank',
+    this.sourceLabel = 'Testora Original • Exam-standard practice',
   });
 
   QuizOption get correctOption => options[correctIndex];
