@@ -1,91 +1,297 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/testora_widgets.dart';
 
 class ExamsScreen extends StatelessWidget {
   const ExamsScreen({super.key});
 
   static const _subjects = [
-    _Subject('mathematics', 'Mathematics', Icons.functions_rounded),
-    _Subject('english', 'English Language', Icons.translate_rounded),
-    _Subject('physics', 'Physics', Icons.science_outlined),
-    _Subject('chemistry', 'Chemistry', Icons.biotech_outlined),
-    _Subject('biology', 'Biology', Icons.eco_outlined),
-    _Subject('government', 'Government', Icons.gavel_rounded),
-    _Subject('economics', 'Economics', Icons.trending_up_rounded),
-    _Subject('literature', 'Literature', Icons.menu_book_rounded),
+    _Subject(
+      id: 'mathematics',
+      name: 'Mathematics',
+      description: 'Numbers & problem solving',
+      icon: Icons.functions_rounded,
+    ),
+    _Subject(
+      id: 'english',
+      name: 'English Language',
+      description: 'Grammar & comprehension',
+      icon: Icons.translate_rounded,
+    ),
+    _Subject(
+      id: 'physics',
+      name: 'Physics',
+      description: 'Motion, energy & matter',
+      icon: Icons.science_outlined,
+    ),
+    _Subject(
+      id: 'chemistry',
+      name: 'Chemistry',
+      description: 'Matter & reactions',
+      icon: Icons.biotech_outlined,
+    ),
+    _Subject(
+      id: 'biology',
+      name: 'Biology',
+      description: 'Life & living systems',
+      icon: Icons.eco_outlined,
+    ),
+    _Subject(
+      id: 'government',
+      name: 'Government',
+      description: 'Civics & political systems',
+      icon: Icons.gavel_rounded,
+    ),
+    _Subject(
+      id: 'economics',
+      name: 'Economics',
+      description: 'Markets & resources',
+      icon: Icons.trending_up_rounded,
+    ),
+    _Subject(
+      id: 'literature',
+      name: 'Literature',
+      description: 'Texts & interpretation',
+      icon: Icons.menu_book_rounded,
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Subjects')),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: _subjects.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 10),
-        itemBuilder: (context, i) {
-          final s = _subjects[i];
-          final theme = Theme.of(context);
+    final tokens = context.tokens;
 
-          return Material(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(18),
-            child: InkWell(
-              onTap:
-                  () => context.pushNamed(
-                    'exam-details',
-                    pathParameters: {'examId': s.id},
-                  ),
-              borderRadius: BorderRadius.circular(18),
-              child: Container(
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: theme.colorScheme.outlineVariant.withValues(
-                      alpha: .5,
-                    ),
-                  ),
-                ),
-                child: Row(
+    return TestoraScaffold(
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.xl,
+              AppSpacing.lg,
+              AppSpacing.sp40,
+            ),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: AppColors.purple.withValues(alpha: .08),
-                        borderRadius: BorderRadius.circular(13),
-                      ),
-                      child: Icon(s.icon, color: AppColors.purple, size: 22),
-                    ),
-                    const SizedBox(width: 13),
                     Expanded(
-                      child: Text(
-                        s.name,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Subjects',
+                            style: TextStyle(
+                              color: tokens.textPrimary,
+                              fontSize: 28,
+                              height: 1.05,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.8,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            'Pick a subject and practise exam-style questions.',
+                            style: TextStyle(
+                              color: tokens.textSecondary,
+                              fontSize: 13,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right_rounded),
+                    const SizedBox(width: AppSpacing.md),
+                    _MockExamButton(
+                      onTap: () => context.push('/mock-exams'),
+                    ),
                   ],
                 ),
-              ),
+                const SizedBox(height: AppSpacing.xxl),
+                _ExamDiscoveryBanner(
+                  onTap: () => context.push('/mock-exams'),
+                ),
+                const SizedBox(height: AppSpacing.section),
+                const SectionTitle(
+                  title: 'All subjects',
+                  subtitle: 'Choose what you want to practise',
+                ),
+                const SizedBox(height: AppSpacing.md),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final gap = AppSpacing.md;
+                    final width = (constraints.maxWidth - gap) / 2;
+                    final height = width.clamp(150.0, 182.0).toDouble();
+
+                    return Wrap(
+                      spacing: gap,
+                      runSpacing: gap,
+                      children: [
+                        for (var i = 0; i < _subjects.length; i++)
+                          SizedBox(
+                                width: width,
+                                height: height,
+                                child: TestoraGridCard(
+                                  icon: _subjects[i].icon,
+                                  title: _subjects[i].name,
+                                  subtitle: _subjects[i].description,
+                                  onTap:
+                                      () => context.pushNamed(
+                                        'exam-details',
+                                        pathParameters: {
+                                          'examId': _subjects[i].id,
+                                        },
+                                      ),
+                                ),
+                              )
+                              .animate(delay: (45 * i).ms)
+                              .fadeIn(duration: 240.ms)
+                              .slideY(
+                                begin: 0.04,
+                                end: 0,
+                                duration: 240.ms,
+                                curve: Curves.easeOutCubic,
+                              ),
+                      ],
+                    );
+                  },
+                ),
+              ]),
             ),
-          );
-        },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MockExamButton extends StatelessWidget {
+  const _MockExamButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
+    return Material(
+      color: tokens.surfaceSecondary,
+      borderRadius: BorderRadius.circular(AppRadius.button),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.button),
+        child: Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.button),
+            border: Border.all(color: tokens.border),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.timer_outlined,
+                size: 18,
+                color: tokens.textPrimary,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                'Mock',
+                style: TextStyle(
+                  color: tokens.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ExamDiscoveryBanner extends StatelessWidget {
+  const _ExamDiscoveryBanner({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
+    return TestoraCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      backgroundColor: tokens.surfaceSecondary,
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: tokens.textPrimary,
+              borderRadius: BorderRadius.circular(AppRadius.button),
+            ),
+            child: Icon(
+              Icons.assignment_turned_in_outlined,
+              color: tokens.background,
+              size: 23,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Take a full mock exam',
+                  style: TextStyle(
+                    color: tokens.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Practise under timed CBT conditions.',
+                  style: TextStyle(
+                    color: tokens.textSecondary,
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Icon(
+            Icons.arrow_forward_rounded,
+            color: tokens.textPrimary,
+            size: 20,
+          ),
+        ],
       ),
     );
   }
 }
 
 class _Subject {
+  const _Subject({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.icon,
+  });
+
   final String id;
   final String name;
+  final String description;
   final IconData icon;
-
-  const _Subject(this.id, this.name, this.icon);
 }
