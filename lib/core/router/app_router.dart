@@ -13,6 +13,7 @@ import 'package:testora_flutter_ui/features/exams/presentation/screens/mock_exam
 import 'package:testora_flutter_ui/features/home/presentation/screens/home_screen.dart';
 import 'package:testora_flutter_ui/features/profile/presentation/screens/profile_screen.dart';
 import 'package:testora_flutter_ui/features/payment/presentation/screens/payment_screen.dart';
+import 'package:testora_flutter_ui/features/payment/presentation/screens/payment_checkout_screen.dart';
 import 'package:testora_flutter_ui/features/progress/presentation/screens/progress_screen.dart';
 import 'package:testora_flutter_ui/features/quiz/presentation/screens/quiz_screen.dart';
 import 'package:testora_flutter_ui/features/quiz/presentation/screens/quiz_setup_screen.dart';
@@ -30,6 +31,7 @@ abstract final class Routes {
   static const exams = 'exams';
   static const progress = 'progress';
   static const payment = 'payment';
+  static const paymentCheckout = 'payment-checkout';
   static const profile = 'profile';
   static const examDetails = 'exam-details';
   static const quizSetup = 'quiz-setup';
@@ -204,6 +206,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/payment',
                 name: Routes.payment,
                 builder: (_, _) => const PaymentScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':packageId',
+                    name: Routes.paymentCheckout,
+                    parentNavigatorKey: rootKey,
+                    builder:
+                        (_, state) => PaymentCheckoutScreen(
+                          packageId: state.pathParameters['packageId']!,
+                        ),
+                  ),
+                ],
               ),
             ],
           ),
