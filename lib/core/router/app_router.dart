@@ -14,6 +14,7 @@ import 'package:testora_flutter_ui/features/home/presentation/screens/home_scree
 import 'package:testora_flutter_ui/features/profile/presentation/screens/profile_screen.dart';
 import 'package:testora_flutter_ui/features/progress/presentation/screens/progress_screen.dart';
 import 'package:testora_flutter_ui/features/quiz/presentation/screens/quiz_screen.dart';
+import 'package:testora_flutter_ui/features/quiz/presentation/screens/quiz_setup_screen.dart';
 import 'package:testora_flutter_ui/features/quiz/presentation/screens/result_screen.dart';
 import 'package:testora_flutter_ui/features/quiz/presentation/screens/solution_screen.dart';
 
@@ -29,6 +30,7 @@ abstract final class Routes {
   static const progress = 'progress';
   static const profile = 'profile';
   static const examDetails = 'exam-details';
+  static const quizSetup = 'quiz-setup';
   static const quiz = 'quiz';
   static const result = 'result';
   static const solution = 'solution';
@@ -131,6 +133,15 @@ final routerProvider = Provider<GoRouter>((ref) {
                           examId: state.pathParameters['examId']!,
                         ),
                     routes: [
+                      GoRoute(
+                        path: 'setup',
+                        name: Routes.quizSetup,
+                        parentNavigatorKey: rootKey,
+                        builder:
+                            (_, state) => QuizSetupScreen(
+                              subjectId: state.pathParameters['examId']!,
+                            ),
+                      ),
                       GoRoute(
                         path: 'quiz',
                         name: Routes.quiz,
