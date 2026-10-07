@@ -91,7 +91,7 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
                       _ValueSlider(
                         label: 'Questions',
                         valueLabel: '${config.questionCount}',
-                        value: config.questionCount.toDouble().clamp(1, 5),
+                        value: config.questionCount.toDouble().clamp(1, 5).toDouble(),
                         min: 1,
                         max: 5,
                         divisions: 4,
@@ -109,7 +109,7 @@ class _QuizSetupScreenState extends ConsumerState<QuizSetupScreen> {
                         label: 'Time limit',
                         valueLabel: '${config.durationMinutes} min',
                         value:
-                            config.durationMinutes.toDouble().clamp(5, 120),
+                            config.durationMinutes.toDouble().clamp(5, 120).toDouble(),
                         min: 5,
                         max: 120,
                         divisions: 23,
