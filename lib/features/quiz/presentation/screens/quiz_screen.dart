@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/testora_widgets.dart';
 import '../../domain/quiz_models.dart';
 import '../../providers/quiz_providers.dart';
 
@@ -22,6 +23,20 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(quizControllerProvider);
     final controller = ref.read(quizControllerProvider.notifier);
+
+    if (state.questions.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Quiz')),
+        body: TestoraEmptyState(
+          icon: Icons.quiz_outlined,
+          title: 'No questions available',
+          message:
+              'There are no questions for this selection yet. Choose another subject or topic.',
+          actionLabel: 'Back to Exams',
+          onAction: () => context.go('/exams'),
+        ),
+      );
+    }
 
     ref.listen(quizControllerProvider, (prev, next) {
       if (next.remaining == Duration.zero &&
