@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/quiz_configuration.dart';
+import 'question_repository_provider.dart';
 
 final quizSetupProvider =
     NotifierProvider<QuizSetupController, QuizConfiguration>(
@@ -16,14 +17,22 @@ class QuizSetupController extends Notifier<QuizConfiguration> {
       examCategoryId: examCategoryId,
       subjectId: subjectId ?? 'biology',
     );
+    _clampQuestionCountToAvailability();
   }
 
   void setQuestionCount(int value) {
-    state = state.copyWith(questionCount: value.clamp(1, 50).toInt());
+    final available = _availableQuestionCount();
+    final maxAllowed = available > 0 ? available : 1;
+
+    state = state.copyWith(
+      questionCount: value.clamp(1, maxAllowed).toInt(),
+    );
   }
 
   void setDurationMinutes(int value) {
-    state = state.copyWith(durationMinutes: value.clamp(1, 180).toInt());
+    state = state.copyWith(
+      durationMinutes: value.clamp(1, 180).toInt(),
+    );
   }
 
   void setMode(QuizMode value) {
@@ -32,6 +41,7 @@ class QuizSetupController extends Notifier<QuizConfiguration> {
 
   void setExamCategory(String value) {
     state = state.copyWith(examCategoryId: value);
+    _clampQuestionCountToAvailability();
   }
 
   void setSubject(String value) {
@@ -40,21 +50,41 @@ class QuizSetupController extends Notifier<QuizConfiguration> {
       clearTopic: true,
       clearYear: true,
     );
+    _clampQuestionCountToAvailability();
   }
 
   void setTopic(String? value) {
-    if (value == null) {
-      state = state.copyWith(clearTopic: true);
-      return;
-    }
-    state = state.copyWith(topic: value);
+    state =
+        value == null
+            ? state.copyWith(clearTopic: true)
+            : state.copyWith(topic: value);
+
+    _clampQuestionCountToAvailability();
   }
 
   void setYear(int? value) {
-    if (value == null) {
-      state = state.copyWith(clearYear: true);
+    state =
+        value == null
+            ? state.copyWith(clearYear: true)
+            : state.copyWith(year: value);
+  }
+
+  int _availableQuestionCount() {
+    final repository = ref.read(questionRepositoryProvider);
+    final probe = state.copyWith(questionCount: 1000);
+    return repository.getQuestions(probe).length;
+  }
+
+  void _clampQuestionCountToAvailability() {
+    final available = _availableQuestionCount();
+
+    if (available <= 0) {
+      state = state.copyWith(questionCount: 1);
       return;
     }
-    state = state.copyWith(year: value);
+
+    if (state.questionCount > available) {
+      state = state.copyWith(questionCount: available);
+    }
   }
 }
