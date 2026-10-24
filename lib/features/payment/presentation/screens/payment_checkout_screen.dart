@@ -46,24 +46,27 @@ class _PaymentCheckoutScreenState
     try {
       final pending = await TestoraPaystackCheckout(api).begin(email: email, packageCode: package.id);
       if (!mounted) { api.close(); return; }
-      await showDialog<void>(context: context, barrierDismissible: false, builder: (dialogContext) => AlertDialog(
+      final shouldVerify = await showDialog<bool>(context: context, barrierDismissible: false, builder: (dialogContext) => AlertDialog(
         title: const Text('Complete your Paystack payment'),
         content: const Text('Finish payment in the browser. When you return here, tap Verify payment. Testora will confirm the transaction directly with Paystack before showing success.'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Not now')),
-          FilledButton(onPressed: () async {
-            Navigator.of(dialogContext).pop();
-            try {
-              final result = await TestoraPaystackCheckout(api).verifyPendingPayment(pending);
-              if (!mounted) return;
-              final success = result['status'] == 'success';
-              await showDialog<void>(context: context, builder: (ctx) => AlertDialog(
-                icon: Icon(success ? Icons.check_circle_outline : Icons.hourglass_top_rounded),
-                title: Text(success ? 'Payment confirmed' : 'Payment not confirmed yet'),
-                content: Text(success ? 'Payment was verified by Paystack. Exam access can now be enabled for this package.' : 'Paystack has not confirmed a successful payment yet. If you completed checkout, wait briefly and verify again.'),
-                actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Okay'))],
-              ));
-            } on TestoraPaymentException catch (e) {
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Not now')),
+          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('Verify payment')),
+        ],
+      ));
+      if (shouldVerify == true) {
+        final result = await TestoraPaystackCheckout(api).verifyPendingPayment(pending);
+        if (!mounted) { api.close(); return; }
+        final success = result['status'] == 'success';
+        await showDialog<void>(context: context, builder: (ctx) => AlertDialog(
+          icon: Icon(success ? Icons.check_circle_outline : Icons.hourglass_top_rounded),
+          title: Text(success ? 'Payment confirmed' : 'Payment not confirmed yet'),
+          content: Text(success ? 'Payment was verified by Paystack. Exam access can now be enabled for this package.' : 'Paystack has not confirmed a successful payment yet. If you completed checkout, wait briefly and verify again.'),
+          actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Okay'))],
+        ));
+      }
+      api.close();
+    } on TestoraPaymentException catch (e) {
               if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
             } finally { api.close(); }
           }, child: const Text('Verify payment')),
