@@ -405,7 +405,7 @@ class _PaystackInfo extends StatelessWidget {
     );
   }
 
-
+}
 
 class _ManualTransferInfo extends StatelessWidget {
   const _ManualTransferInfo({required this.selectedPackage});
