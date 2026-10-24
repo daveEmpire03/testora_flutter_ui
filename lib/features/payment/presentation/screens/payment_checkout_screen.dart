@@ -405,26 +405,7 @@ class _PaystackInfo extends StatelessWidget {
     );
   }
 
-  void _showPaystackPending(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder:
-          (dialogContext) => AlertDialog(
-            icon: const Icon(Icons.credit_card_rounded),
-            title: const Text('Paystack setup required'),
-            content: const Text(
-              'The checkout UI is ready. Live Paystack charging will be connected to the Testora backend so payment verification and exam access cannot be bypassed.',
-            ),
-            actions: [
-              FilledButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Okay'),
-              ),
-            ],
-          ),
-    );
-  }
-}
+
 
 class _ManualTransferInfo extends StatelessWidget {
   const _ManualTransferInfo({required this.selectedPackage});
