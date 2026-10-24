@@ -7,6 +7,8 @@ import '../../../../shared/testora_widgets.dart';
 import '../../application/payment_catalog_provider.dart';
 import '../../domain/entities/exam_payment_package.dart';
 import '../../domain/entities/payment_method.dart';
+import '../../data/testora_payment_api.dart';
+import '../../data/testora_paystack_checkout.dart';
 
 class PaymentCheckoutScreen extends ConsumerStatefulWidget {
   const PaymentCheckoutScreen({
@@ -24,6 +26,58 @@ class PaymentCheckoutScreen extends ConsumerStatefulWidget {
 class _PaymentCheckoutScreenState
     extends ConsumerState<PaymentCheckoutScreen> {
   PaymentMethodType _selectedMethod = PaymentMethodType.paystack;
+  final TextEditingController _emailController = TextEditingController();
+  bool _isStartingPayment = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startPaystackCheckout(ExamPaymentPackage package) async {
+    final email = _emailController.text.trim();
+    if (!email.contains('@') || !email.split('@').last.contains('.')) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid email address to receive your payment receipt.')));
+      return;
+    }
+    setState(() => _isStartingPayment = true);
+    final api = TestoraPaymentApi();
+    try {
+      final pending = await TestoraPaystackCheckout(api).begin(email: email, packageCode: package.id);
+      if (!mounted) { api.close(); return; }
+      await showDialog<void>(context: context, barrierDismissible: false, builder: (dialogContext) => AlertDialog(
+        title: const Text('Complete your Paystack payment'),
+        content: const Text('Finish payment in the browser. When you return here, tap Verify payment. Testora will confirm the transaction directly with Paystack before showing success.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Not now')),
+          FilledButton(onPressed: () async {
+            Navigator.of(dialogContext).pop();
+            try {
+              final result = await TestoraPaystackCheckout(api).verifyPendingPayment(pending);
+              if (!mounted) return;
+              final success = result['status'] == 'success';
+              await showDialog<void>(context: context, builder: (ctx) => AlertDialog(
+                icon: Icon(success ? Icons.check_circle_outline : Icons.hourglass_top_rounded),
+                title: Text(success ? 'Payment confirmed' : 'Payment not confirmed yet'),
+                content: Text(success ? 'Payment was verified by Paystack. Exam access can now be enabled for this package.' : 'Paystack has not confirmed a successful payment yet. If you completed checkout, wait briefly and verify again.'),
+                actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Okay'))],
+              ));
+            } on TestoraPaymentException catch (e) {
+              if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+            } finally { api.close(); }
+          }, child: const Text('Verify payment')),
+        ],
+      ));
+      // If the dialog is dismissed without verifying, release the HTTP client.
+      api.close();
+    } on TestoraPaymentException catch (e) {
+      api.close();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() => _isStartingPayment = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +133,13 @@ class _PaymentCheckoutScreenState
 
             _OrderSummaryCard(selectedPackage: selectedPackage),
 
+            const SizedBox(height: AppSpacing.lg),
+            TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
+              decoration: const InputDecoration(labelText: 'Email address', hintText: 'student@example.com', prefixIcon: Icon(Icons.email_outlined), border: OutlineInputBorder()),
+            ),
             const SizedBox(height: AppSpacing.section),
             const SectionTitle(
               title: 'Payment method',
@@ -109,7 +170,7 @@ class _PaymentCheckoutScreenState
             const SizedBox(height: AppSpacing.xl),
 
             if (_selectedMethod == PaymentMethodType.paystack)
-              _PaystackInfo(selectedPackage: selectedPackage)
+              _PaystackInfo(selectedPackage: selectedPackage, isLoading: _isStartingPayment, onCheckout: () => _startPaystackCheckout(selectedPackage))
             else
               _ManualTransferInfo(selectedPackage: selectedPackage),
           ],
@@ -295,9 +356,11 @@ class _PaymentMethodCard extends StatelessWidget {
 }
 
 class _PaystackInfo extends StatelessWidget {
-  const _PaystackInfo({required this.selectedPackage});
+  const _PaystackInfo({required this.selectedPackage, required this.onCheckout, required this.isLoading});
 
   final ExamPaymentPackage selectedPackage;
+  final VoidCallback onCheckout;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -330,9 +393,10 @@ class _PaystackInfo extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         TestoraButton(
-          label: 'Continue with Paystack',
+          label: isLoading ? 'Opening secure checkout…' : 'Continue with Paystack',
           icon: Icons.arrow_forward_rounded,
-          onTap: () => _showPaystackPending(context),
+          enabled: !isLoading,
+          onTap: onCheckout,
         ),
       ],
     );
