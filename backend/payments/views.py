@@ -1,9 +1,9 @@
 import json
 from django.db import transaction as db_transaction
+from django.db.models import Q
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,8 +13,7 @@ from .services import PaystackError,initialize_payment,verify_transaction,valid_
 class PaymentThrottle(AnonRateThrottle): scope='payments'
 def health(request): return JsonResponse({'status':'ok'})
 @api_view(['GET'])
-def packages(request):
- return Response({'results':[{'code':p.code,'name':p.name,'amount_kobo':p.amount_kobo,'currency':p.currency,'description':p.description} for p in ExamPackage.objects.filter(active=True).order_by('amount_kobo')]})
+def packages(request): return Response({'results':[{'code':p.code,'name':p.name,'amount_kobo':p.amount_kobo,'currency':p.currency,'description':p.description} for p in ExamPackage.objects.filter(active=True).order_by('amount_kobo')]})
 class InitializePaymentView(APIView):
  throttle_classes=[PaymentThrottle]
  def post(self,request):
@@ -60,7 +59,7 @@ class PaystackWebhookView(APIView):
   except (ValueError,TypeError):return Response({'detail':'Invalid JSON.'},status=400)
   if event.get('event')!='charge.success':return Response({'received':True})
   ref=str((event.get('data') or {}).get('reference',''))
-  try:p=Payment.objects.select_related('package').get(reference=ref)
+  try:p=Payment.objects.select_related('package').get(Q(reference=ref)|Q(paystack_reference=ref))
   except Payment.DoesNotExist:return Response({'received':True})
   try:data=verify_transaction(str(p.paystack_reference or p.reference))
   except PaystackError:return Response({'detail':'Verification temporarily unavailable.'},status=503)
