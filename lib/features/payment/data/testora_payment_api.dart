@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// Paystack checkout API. Configure TESTORA_API_BASE_URL at build time.
