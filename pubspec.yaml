@@ -18,6 +18,8 @@ dependencies:
   percent_indicator: ^4.2.3
   flutter_animate: ^4.5.2
   shimmer: ^3.0.0
+  firebase_core: ^5.1.0
+  firebase_auth: ^7.0.1
 
 dev_dependencies:
   flutter_test:
