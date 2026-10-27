@@ -521,16 +521,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 }
 
 // FORGOT PASSWORD
-class ForgotPasswordScreen extends StatefulWidget {
+class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+class _ForgotPasswordScreenState
+    extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -538,14 +541,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  void _sendResetLink() {
+  Future<void> _sendResetLink() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
+    setState(() => _submitting = true);
+    final ok = await ref
+        .read(authProvider.notifier)
+        .sendPasswordResetEmail(email: _email.text.trim());
+
+    if (!mounted) return;
+    setState(() => _submitting = false);
+
+    final message =
+        ok
+            ? 'If an account exists for this email, password reset instructions have been sent.'
+            : (ref.read(authProvider).error ??
+                'Unable to send reset instructions. Please try again.');
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Password reset instructions have been sent.'),
-      ),
+      SnackBar(content: Text(message)),
     );
   }
 
@@ -632,6 +647,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     const SizedBox(height: 20),
                     GradientButton(
                       label: 'Send Reset Link',
+                      isLoading: _submitting,
                       onTap: _sendResetLink,
                     ),
                     const SizedBox(height: 10),
