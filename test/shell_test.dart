@@ -8,7 +8,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets(
-    'MainShell renders 4 tabs with icons and responds to navigation',
+    'MainShell renders 5 tabs with icons and responds to navigation',
     (tester) async {
       final router = GoRouter(
         initialLocation: '/home',
@@ -52,6 +52,17 @@ void main() {
               StatefulShellBranch(
                 routes: [
                   GoRoute(
+                    path: '/payment',
+                    builder:
+                        (_, _) => const Scaffold(
+                          body: Text('Payment Screen Content'),
+                        ),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
                     path: '/profile',
                     builder:
                         (_, _) => const Scaffold(
@@ -74,10 +85,11 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify 4 tabs exist
+      // Verify 5 tabs exist
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Exams'), findsOneWidget);
       expect(find.text('Progress'), findsOneWidget);
+      expect(find.text('Payment'), findsOneWidget);
       expect(find.text('Profile'), findsOneWidget);
 
       expect(find.text('Home Screen Content'), findsOneWidget);
@@ -91,6 +103,11 @@ void main() {
       await tester.tap(find.text('Progress'));
       await tester.pumpAndSettle();
       expect(find.text('Progress Screen Content'), findsOneWidget);
+
+      // Switch to Payment
+      await tester.tap(find.text('Payment'));
+      await tester.pumpAndSettle();
+      expect(find.text('Payment Screen Content'), findsOneWidget);
 
       // Switch to Profile
       await tester.tap(find.text('Profile'));

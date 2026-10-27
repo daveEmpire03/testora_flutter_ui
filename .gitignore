@@ -44,3 +44,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 pubspec.yaml.bak
+
+# Backend & Environment
+.env
+*.env
+*.sqlite3
+venv/
+.venv/
+__pycache__/

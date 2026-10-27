@@ -1,6 +1,7 @@
 import '../../domain/entities/exam_payment_package.dart';
 import '../../domain/repositories/payment_catalog_repository.dart';
 
+/// Offline/dev fallback catalog — used when the remote API is unavailable.
 class LocalPaymentCatalogRepository implements PaymentCatalogRepository {
   const LocalPaymentCatalogRepository();
 
@@ -36,10 +37,10 @@ class LocalPaymentCatalogRepository implements PaymentCatalogRepository {
   ];
 
   @override
-  List<ExamPaymentPackage> getPackages() => _packages;
+  Future<List<ExamPaymentPackage>> getPackages() async => _packages;
 
   @override
-  ExamPaymentPackage? getPackageById(String id) {
+  Future<ExamPaymentPackage?> getPackageById(String id) async {
     for (final package in _packages) {
       if (package.id == id) return package;
     }

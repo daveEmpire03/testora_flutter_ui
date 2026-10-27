@@ -67,33 +67,30 @@ class HomeScreen extends ConsumerWidget {
                 ),
             data:
                 (items) => SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
                   sliver: SliverGrid(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final category = items[index];
-                        return _ExamTypeCard(
-                              category: category,
-                              onTap: () {
-                                ref
-                                    .read(
-                                      selectedExamCategoryProvider.notifier,
-                                    )
-                                    .select(category.id);
-                                context.go('/exams');
-                              },
-                            )
-                            .animate(delay: (45 * index).ms)
-                            .fadeIn(duration: 240.ms)
-                            .slideY(
-                              begin: 0.04,
-                              end: 0,
-                              duration: 240.ms,
-                              curve: Curves.easeOutCubic,
-                            );
-                      },
-                      childCount: items.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final category = items[index];
+                      return _ExamTypeCard(
+                            category: category,
+                            onTap: () {
+                              ref
+                                  .read(selectedExamCategoryProvider.notifier)
+                                  .select(category.id);
+                              context.go('/exams');
+                            },
+                          )
+                          .animate(delay: (45 * index).ms)
+                          .fadeIn(duration: 240.ms)
+                          .slideY(
+                            begin: 0.04,
+                            end: 0,
+                            duration: 240.ms,
+                            curve: Curves.easeOutCubic,
+                          );
+                    }, childCount: items.length),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
@@ -289,10 +286,7 @@ class _ProfileAvatar extends StatelessWidget {
 }
 
 class _ExamTypeCard extends StatelessWidget {
-  const _ExamTypeCard({
-    required this.category,
-    required this.onTap,
-  });
+  const _ExamTypeCard({required this.category, required this.onTap});
 
   final ExamCategory category;
   final VoidCallback onTap;

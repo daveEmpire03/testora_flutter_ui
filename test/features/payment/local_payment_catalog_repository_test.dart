@@ -5,9 +5,9 @@ void main() {
   group('LocalPaymentCatalogRepository', () {
     const repository = LocalPaymentCatalogRepository();
 
-    test('exposes the configured exam prices', () {
+    test('exposes the configured exam prices', () async {
       final packages = repository.getPackages();
-      final byId = {for (final item in packages) item.id: item};
+      final byId = {for (final item in await packages) item.id: item};
 
       expect(byId['utme']?.priceNaira, 2000);
       expect(byId['waec']?.priceNaira, 4000);
@@ -15,15 +15,16 @@ void main() {
       expect(byId['postgraduate']?.priceNaira, 5000);
     });
 
-    test('converts naira pricing to kobo for gateways', () {
-      final utme = repository.getPackageById('utme');
+    test('converts naira pricing to kobo for gateways', () async {
+      final utme = await repository.getPackageById('utme');
 
       expect(utme, isNotNull);
-      expect(utme!.priceKobo, 200000);
+      expect(utme?.priceKobo, 200000);
     });
 
-    test('returns null for an unknown package', () {
-      expect(repository.getPackageById('unknown'), isNull);
+    test('returns null for an unknown package', () async {
+      final package = await repository.getPackageById('unknown');
+      expect(package, isNull);
     });
   });
 }

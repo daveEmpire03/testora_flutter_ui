@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/testora_widgets.dart';
 import '../../application/payment_catalog_provider.dart';
 import '../../domain/entities/exam_payment_package.dart';
+import '../payment_ui_helpers.dart';
 
 class PaymentScreen extends ConsumerWidget {
   const PaymentScreen({super.key});
@@ -14,7 +15,7 @@ class PaymentScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.tokens;
-    final packages = ref.watch(paymentPackagesProvider);
+    final packagesAsync = ref.watch(paymentPackagesProvider);
 
     return TestoraScaffold(
       child: ListView(
@@ -47,7 +48,7 @@ class PaymentScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.xxl),
 
-          _AccessInfoCard(),
+          const _AccessInfoCard(),
 
           const SizedBox(height: AppSpacing.section),
           const SectionTitle(
@@ -56,18 +57,32 @@ class PaymentScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          for (var index = 0; index < packages.length; index++) ...[
-            _ExamPaymentCard(
-              package: packages[index],
-              onTap:
-                  () => context.pushNamed(
-                    'payment-checkout',
-                    pathParameters: {'packageId': packages[index].id},
-                  ),
+          // ── Packages section: loading / error / data ─────────────────
+          packagesAsync.when(
+            loading: () => const TestoraListSkeleton(itemCount: 4, itemHeight: 84),
+            error: (error, _) => TestoraEmptyState(
+              icon: Icons.cloud_off_rounded,
+              title: 'Could not load packages',
+              message: error.toString(),
+              actionLabel: 'Retry',
+              onAction: () => ref.invalidate(paymentPackagesProvider),
             ),
-            if (index != packages.length - 1)
-              const SizedBox(height: AppSpacing.md),
-          ],
+            data: (packages) => Column(
+              children: [
+                for (var index = 0; index < packages.length; index++) ...[
+                  _ExamPaymentCard(
+                    package: packages[index],
+                    onTap: () => context.pushNamed(
+                      'payment-checkout',
+                      pathParameters: {'packageId': packages[index].id},
+                    ),
+                  ),
+                  if (index != packages.length - 1)
+                    const SizedBox(height: AppSpacing.md),
+                ],
+              ],
+            ),
+          ),
 
           const SizedBox(height: AppSpacing.section),
           TestoraCard(
@@ -101,6 +116,8 @@ class PaymentScreen extends ConsumerWidget {
 }
 
 class _AccessInfoCard extends StatelessWidget {
+  const _AccessInfoCard();
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -158,10 +175,7 @@ class _AccessInfoCard extends StatelessWidget {
 }
 
 class _ExamPaymentCard extends StatelessWidget {
-  const _ExamPaymentCard({
-    required this.package,
-    required this.onTap,
-  });
+  const _ExamPaymentCard({required this.package, required this.onTap});
 
   final ExamPaymentPackage package;
   final VoidCallback onTap;
@@ -184,7 +198,7 @@ class _ExamPaymentCard extends StatelessWidget {
               border: Border.all(color: tokens.border),
             ),
             child: Icon(
-              _iconFor(package.iconKey),
+              paymentIconFor(package.iconKey),
               color: tokens.textPrimary,
               size: 22,
             ),
@@ -221,7 +235,7 @@ class _ExamPaymentCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                _formatNaira(package.priceNaira),
+                formatNaira(package.priceNaira),
                 style: TextStyle(
                   color: tokens.textPrimary,
                   fontSize: 15,
@@ -240,33 +254,4 @@ class _ExamPaymentCard extends StatelessWidget {
       ),
     );
   }
-}
-
-IconData _iconFor(String key) {
-  switch (key) {
-    case 'school':
-      return Icons.school_outlined;
-    case 'menu_book':
-      return Icons.menu_book_outlined;
-    case 'account_balance':
-      return Icons.account_balance_outlined;
-    case 'workspace_premium':
-      return Icons.workspace_premium_outlined;
-    default:
-      return Icons.quiz_outlined;
-  }
-}
-
-String _formatNaira(int amount) {
-  final raw = amount.toString();
-  final buffer = StringBuffer();
-
-  for (var index = 0; index < raw.length; index++) {
-    if (index > 0 && (raw.length - index) % 3 == 0) {
-      buffer.write(',');
-    }
-    buffer.write(raw[index]);
-  }
-
-  return '₦$buffer';
 }

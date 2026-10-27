@@ -19,6 +19,11 @@ AUTH_PASSWORD_VALIDATORS=[]
 LANGUAGE_CODE='en-us'; TIME_ZONE='Africa/Lagos'; USE_I18N=True; USE_TZ=True
 STATIC_URL='static/'; DEFAULT_AUTO_FIELD='django.db.models.BigAutoField'
 REST_FRAMEWORK={'DEFAULT_PERMISSION_CLASSES':['rest_framework.permissions.AllowAny'],'DEFAULT_THROTTLE_CLASSES':['rest_framework.throttling.AnonRateThrottle'],'DEFAULT_THROTTLE_RATES':{'anon':'60/min','payments':'10/min'}}
-CORS_ALLOWED_ORIGINS=[x.strip() for x in os.getenv('CORS_ALLOWED_ORIGINS','').split(',') if x.strip()]
+# In development, allow all origins so the Flutter app (emulator/device) can reach the local server.
+# In production, set CORS_ALLOWED_ORIGINS in environment and DJANGO_DEBUG=false.
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOWED_ORIGINS = [x.strip() for x in os.getenv('CORS_ALLOWED_ORIGINS','').split(',') if x.strip()]
 PAYSTACK_SECRET_KEY=os.getenv('PAYSTACK_SECRET_KEY','')
 PAYSTACK_CALLBACK_URL=os.getenv('PAYSTACK_CALLBACK_URL','http://localhost:8000/api/payments/callback/')
