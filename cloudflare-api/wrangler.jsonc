@@ -16,7 +16,7 @@
     {
       "binding": "DB",
       "database_name": "testora-db",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "1449f8b9-f057-4a9d-acba-d69c9141aee5",
       "migrations_dir": "migrations"
     }
   ]
