@@ -7,8 +7,13 @@ import {
 const FIREBASE_JWKS_URL =
   "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
 
+interface FirebaseJwk extends JsonWebKey {
+  /** Key identifier published by Google's JWKS endpoint. */
+  kid?: string;
+}
+
 interface FirebaseJwks {
-  keys: JsonWebKey[];
+  keys: FirebaseJwk[];
 }
 
 interface FirebaseJwtHeader {
@@ -30,7 +35,7 @@ interface FirebaseJwtPayload {
 }
 
 interface CachedJwks {
-  keys: JsonWebKey[];
+  keys: FirebaseJwk[];
   expiresAt: number;
 }
 
