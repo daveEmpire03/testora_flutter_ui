@@ -113,6 +113,27 @@ npm run dev
 
 Local Worker URL is normally `http://localhost:8787`.
 
+### 4. Run the Flutter client against the local Worker
+
+From the repository root (one directory above `cloudflare-api`), install Flutter dependencies and run the web app on the CORS-allowed port:
+
+```powershell
+flutter pub get
+flutter run -d chrome --web-port 7357 --dart-define=TESTORA_API_BASE_URL=http://127.0.0.1:8787/api/v1
+```
+
+For an Android emulator, use `http://10.0.2.2:8787/api/v1` as the dart-define value. For a physical device, use the development machine's LAN IP and ensure the device can reach port 8787.
+
+The Flutter client obtains a Firebase ID token from the currently signed-in user and sends it as a Bearer token. It sends only the package ID to checkout initialization; the Worker owns the amount. After opening the hosted Paystack page, the client calls the authenticated verification endpoint and checks the user's entitlement before displaying access as unlocked.
+
+For release builds, provide the deployed HTTPS Worker API URL explicitly:
+
+```powershell
+flutter build web --release --dart-define=TESTORA_API_BASE_URL=https://YOUR_WORKER_DOMAIN/api/v1
+```
+
+Do not ship a release build with a local API URL. Configure the Worker `ALLOWED_ORIGINS` with the exact production Flutter Web origin before browser integration.
+
 The example CORS origins in `wrangler.jsonc` allow Flutter Web on port 7357. Run Flutter Web with that port during local integration, or update `ALLOWED_ORIGINS` to the exact origin being used.
 
 ## Production setup
