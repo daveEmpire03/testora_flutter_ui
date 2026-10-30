@@ -113,7 +113,7 @@ class CloudflarePaymentRepository implements PaymentRepository {
       final response = await request(
         Options(
           headers: {
-            Headers.authorizationHeader: 'Bearer $idToken',
+            'Authorization': 'Bearer $idToken',
           },
         ),
       );
