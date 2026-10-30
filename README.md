@@ -20,11 +20,11 @@ See [Cloudflare API setup](./cloudflare-api/README.md) for local development, D1
 
 ## Flutter setup
 
-\`\`\`powershell
+```powershell
 flutter pub get
 flutter analyze
 flutter test
 flutter run -d chrome
-\`\`\`
+```
 
 See [Firebase setup](./FIREBASE_SETUP.md) for Firebase project configuration.
