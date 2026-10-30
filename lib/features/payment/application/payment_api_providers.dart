@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/config/api_config.dart';
+import '../../../core/config/api_config.dart';
 import '../../auth/providers/auth_providers.dart';
-import '../domain/repositories/payment_repository.dart';
 import '../data/repositories/cloudflare_payment_repository.dart';
+import '../domain/repositories/payment_repository.dart';
 
 final paymentRepositoryProvider = Provider<PaymentRepository>((ref) {
   final dio = Dio(
