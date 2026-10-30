@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 /// Runtime configuration for the Testora Cloudflare Worker API.
 ///
 /// Override the local default with:
-/// --dart-define=TESTORA_API_BASE_URL=https://<worker-host>/api/v1
+/// `--dart-define=TESTORA_API_BASE_URL=https://your-worker-host.example/api/v1`
 abstract final class ApiConfig {
   static const String _configuredBaseUrl = String.fromEnvironment(
     'TESTORA_API_BASE_URL',
