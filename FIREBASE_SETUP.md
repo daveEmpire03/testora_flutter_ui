@@ -22,7 +22,7 @@ flutterfire configure --platforms=web
 
 ## Flutter authentication
 
-The Flutter app uses Firebase Auth for email/password registration, login, session restoration, password reset and logout. The signed-in Firebase user is the source of the ID token sent to the Cloudflare API.
+The Flutter app uses Firebase Auth for email/password registration, login, session restoration, password reset and logout. Session state listens to `idTokenChanges()`, so the app also observes Firebase ID-token refreshes rather than only sign-in and sign-out events. The signed-in Firebase user is the source of the ID token sent to the Cloudflare API. The client obtains the current ID token when making an authenticated API request; Firebase refreshes an expired token through its SDK.
 
 The user's ID token must be sent in the HTTP Authorization header:
 
