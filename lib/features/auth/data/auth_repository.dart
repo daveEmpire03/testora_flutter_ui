@@ -25,7 +25,8 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Stream<AppUser?> authStateChanges() {
-    return _firebaseAuth.authStateChanges().map(_mapFirebaseUser);
+    // Keep the app session synchronized when Firebase refreshes the ID token.
+    return _firebaseAuth.idTokenChanges().map(_mapFirebaseUser);
   }
 
   @override
