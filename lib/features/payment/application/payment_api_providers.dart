@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/api_config.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../data/repositories/cloudflare_payment_repository.dart';
+import '../domain/entities/payment_transaction.dart';
 import '../domain/repositories/payment_repository.dart';
 
 final paymentRepositoryProvider = Provider<PaymentRepository>((ref) {
@@ -25,4 +26,10 @@ final paymentRepositoryProvider = Provider<PaymentRepository>((ref) {
     firebaseAuth: ref.watch(firebaseAuthProvider),
     dio: dio,
   );
+});
+
+final paymentHistoryProvider =
+    FutureProvider.autoDispose<List<PaymentTransaction>>((ref) async {
+  final repository = ref.watch(paymentRepositoryProvider);
+  return repository.getPaymentHistory();
 });

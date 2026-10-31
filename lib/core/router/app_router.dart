@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:testora_flutter_ui/core/shell/main_shell.dart';
+import 'package:testora_flutter_ui/features/auth/data/auth_state.dart';
 import 'package:testora_flutter_ui/features/auth/presentation/screens/auth_screens.dart';
 import 'package:testora_flutter_ui/features/auth/presentation/splash_screen.dart';
 import 'package:testora_flutter_ui/features/auth/providers/auth_providers.dart';
@@ -46,16 +47,27 @@ abstract final class Routes {
   static const history = 'history';
 }
 
+class RouterRefreshNotifier extends ChangeNotifier {
+  RouterRefreshNotifier(Ref ref) {
+    ref.listen<AuthState>(authProvider, (_, _) {
+      notifyListeners();
+    });
+  }
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authProvider);
   final rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+  final refreshNotifier = RouterRefreshNotifier(ref);
+  ref.onDispose(refreshNotifier.dispose);
 
   return GoRouter(
     navigatorKey: rootKey,
     initialLocation: '/splash',
+    refreshListenable: refreshNotifier,
     debugLogDiagnostics: true,
 
     redirect: (context, state) {
+      final auth = ref.read(authProvider);
       final loc = state.matchedLocation;
       final onSplash = loc == '/splash';
       final onOnboarding = loc == '/onboarding';

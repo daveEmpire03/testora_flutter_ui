@@ -39,7 +39,23 @@ export function createApp(options: CreateAppOptions = {}) {
           c.env.ALLOWED_ORIGINS,
         );
 
-        return allowedOrigins.has(origin) ? origin : "";
+        if (allowedOrigins.has(origin)) return origin;
+
+        if (c.env.APP_ENV === "development") {
+          try {
+            const parsed = new URL(origin);
+            if (
+              parsed.protocol === "http:" &&
+              (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1")
+            ) {
+              return origin;
+            }
+          } catch {
+            return "";
+          }
+        }
+
+        return "";
       },
       allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
       allowHeaders: ["Content-Type", "Authorization"],

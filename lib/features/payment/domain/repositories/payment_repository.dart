@@ -16,6 +16,8 @@ abstract interface class PaymentRepository {
   Future<bool> hasActiveEntitlement({
     required String packageId,
   });
+
+  Future<List<PaymentTransaction>> getPaymentHistory();
 }
 
 class PaymentRepositoryException implements Exception {

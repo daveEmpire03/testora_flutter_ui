@@ -169,17 +169,35 @@ export function createPaymentRoutes(options: PaymentRouteOptions = {}) {
 
       if (error instanceof AppError) throw error;
 
+      const errorMessage =
+        error instanceof Error ? error.message : "Paystack initialization failed";
+
       console.error("Paystack initialization failed", {
         requestId: c.get("requestId"),
         reference,
+        error: errorMessage,
       });
 
       throw new AppError(
         502,
         "PAYMENT_INITIALIZATION_FAILED",
-        "We could not start your payment. Please try again.",
+        c.env.APP_ENV === "development"
+          ? `Payment initialization failed: ${errorMessage}`
+          : "We could not start your payment. Please try again.",
       );
     }
+  });
+
+  routes.get("/history", authenticate, async (c) => {
+    const repository = new D1PaymentRepository(requireDatabase(c));
+    const payments = await repository.listUserPayments(
+      c.get("authenticatedUser").uid,
+    );
+
+    return c.json({
+      data: payments.map(publicPayment),
+      requestId: c.get("requestId"),
+    });
   });
 
   routes.get("/:reference/status", authenticate, async (c) => {
@@ -242,6 +260,7 @@ export function createPaymentRoutes(options: PaymentRouteOptions = {}) {
       console.error("Paystack verification request failed", {
         requestId: c.get("requestId"),
         reference,
+        error: error instanceof Error ? error.message : String(error),
       });
 
       throw new AppError(

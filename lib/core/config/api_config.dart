@@ -11,10 +11,15 @@ abstract final class ApiConfig {
 
   static String get baseUrl {
     final configured = _configuredBaseUrl.trim();
+    final defaultLocalHost =
+        (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
+            ? 'http://10.0.2.2:8787/api/v1'
+            : 'http://127.0.0.1:8787/api/v1';
+
     final rawBaseUrl =
         configured.isNotEmpty
             ? configured
-            : (kReleaseMode ? '' : 'http://127.0.0.1:8787/api/v1');
+            : (kReleaseMode ? '' : defaultLocalHost);
 
     if (rawBaseUrl.isEmpty) {
       throw StateError(

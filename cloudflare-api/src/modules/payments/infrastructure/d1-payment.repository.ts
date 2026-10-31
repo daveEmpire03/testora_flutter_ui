@@ -84,6 +84,18 @@ export class D1PaymentRepository {
     return row ? this.toPaymentRecord(row) : null;
   }
 
+  async listUserPayments(firebaseUid: string): Promise<PaymentRecord[]> {
+    const rows = await this.db
+      .prepare(
+        "SELECT * FROM payment_transactions " +
+        "WHERE firebase_uid = ? ORDER BY created_at DESC LIMIT 50",
+      )
+      .bind(firebaseUid)
+      .all<PaymentRow>();
+
+    return (rows.results ?? []).map((row) => this.toPaymentRecord(row));
+  }
+
   async findOwnedPayment(
     reference: string,
     firebaseUid: string,

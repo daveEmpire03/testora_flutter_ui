@@ -50,6 +50,12 @@ class FirebaseAuthRepository implements AuthRepository {
       return _mapFirebaseUser(user)!;
     } on FirebaseAuthException catch (error) {
       throw AuthRepositoryException(_messageFor(error));
+    } on FirebaseException catch (error) {
+      throw AuthRepositoryException(
+        error.message ?? 'Firebase authentication error.',
+      );
+    } catch (error) {
+      throw AuthRepositoryException(error.toString());
     }
   }
 
@@ -83,6 +89,12 @@ class FirebaseAuthRepository implements AuthRepository {
       )!;
     } on FirebaseAuthException catch (error) {
       throw AuthRepositoryException(_messageFor(error));
+    } on FirebaseException catch (error) {
+      throw AuthRepositoryException(
+        error.message ?? 'Firebase registration error.',
+      );
+    } catch (error) {
+      throw AuthRepositoryException(error.toString());
     }
     // Firebase Email/Password Auth cannot store an unverified phone number.
     // The Cloudflare profile API will persist the submitted phone in a later phase.
@@ -96,6 +108,12 @@ class FirebaseAuthRepository implements AuthRepository {
       // Avoid disclosing whether an email address has a Testora account.
       if (error.code == 'user-not-found') return;
       throw AuthRepositoryException(_messageFor(error));
+    } on FirebaseException catch (error) {
+      throw AuthRepositoryException(
+        error.message ?? 'Unable to send password reset email.',
+      );
+    } catch (error) {
+      throw AuthRepositoryException(error.toString());
     }
   }
 
@@ -145,10 +163,14 @@ class FirebaseAuthRepository implements AuthRepository {
         return 'A network error occurred. Check your connection and try again.';
       case 'operation-not-allowed':
         return 'Email and password sign-in is not enabled in Firebase Console.';
+      case 'unauthorized-domain':
+        return 'This domain is not authorized in Firebase Console (Authentication > Settings > Authorized domains).';
       case 'requires-recent-login':
         return 'Please sign in again before retrying this action.';
       default:
-        return 'Authentication failed. Please try again.';
+        return error.message?.isNotEmpty == true
+            ? error.message!
+            : 'Authentication failed. Please try again.';
     }
   }
 }

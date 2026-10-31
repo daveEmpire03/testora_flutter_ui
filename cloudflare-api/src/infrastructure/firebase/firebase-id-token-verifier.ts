@@ -100,7 +100,9 @@ function isNumericDate(value: unknown): value is number {
 export function createFirebaseIdTokenVerifier(
   options: FirebaseIdTokenVerifierOptions = {},
 ): (token: string, projectId: string) => Promise<AuthenticatedUser> {
-  const fetcher = options.fetcher ?? fetch;
+  const fetcher =
+    options.fetcher ??
+    ((input: RequestInfo | URL, init?: RequestInit) => fetch(input, init));
   const nowProvider = options.now ?? Date.now;
 
   let cachedJwks: CachedJwks | undefined;

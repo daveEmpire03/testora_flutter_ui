@@ -92,6 +92,63 @@ class CloudflarePaymentRepository implements PaymentRepository {
     return entitled;
   }
 
+  @override
+  Future<List<PaymentTransaction>> getPaymentHistory() async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      throw const PaymentRepositoryException(
+        'Please sign in to view your payment history.',
+      );
+    }
+
+    try {
+      final idToken = await user.getIdToken();
+      if (idToken == null || idToken.isEmpty) {
+        throw const PaymentRepositoryException(
+          'Your sign-in session could not be verified. Please sign in again.',
+        );
+      }
+
+      final response = await _dio.get<dynamic>(
+        'payments/history',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $idToken',
+          },
+        ),
+      );
+
+      final body = response.data;
+      if (body is! Map) {
+        throw const PaymentRepositoryException(
+          'The payment service returned an invalid response. Please retry.',
+        );
+      }
+
+      final data = body['data'];
+      if (data is! List) {
+        throw const PaymentRepositoryException(
+          'The payment service returned an invalid response. Please retry.',
+        );
+      }
+
+      return data
+          .whereType<Map>()
+          .map((item) => _parseTransaction(Map<String, dynamic>.from(item)))
+          .toList();
+    } on DioException catch (error) {
+      throw PaymentRepositoryException(_messageFor(error));
+    } on FirebaseAuthException {
+      throw const PaymentRepositoryException(
+        'Your sign-in session could not be verified. Please sign in again.',
+      );
+    } on TypeError {
+      throw const PaymentRepositoryException(
+        'The payment service returned an invalid response. Please retry.',
+      );
+    }
+  }
+
   Future<Map<String, dynamic>> _authenticatedDataRequest(
     Future<Response<dynamic>> Function(Options options) request,
   ) async {

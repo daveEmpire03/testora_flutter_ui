@@ -6,14 +6,15 @@ import type {
 } from "../domain/payment.types";
 
 export class PaystackGatewayError extends Error {
-  constructor() {
-    super("Paystack request failed.");
+  constructor(message = "Paystack request failed.") {
+    super(message);
     this.name = "PaystackGatewayError";
   }
 }
 
 interface PaystackEnvelope<T> {
   status?: boolean;
+  message?: string;
   data?: T;
 }
 
@@ -32,10 +33,19 @@ interface PaystackVerifyData {
 }
 
 export class PaystackClient implements PaymentGateway {
+  private readonly fetcher: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+
   constructor(
     private readonly secretKey: string,
-    private readonly fetcher: typeof fetch = fetch,
-  ) {}
+    fetcher?: typeof fetch,
+  ) {
+    // Wrap in an arrow so `fetch` is always invoked in the global scope,
+    // not bound to a class instance. Cloudflare Workers throws "Illegal
+    // invocation" when fetch is called with a non-global `this`.
+    const baseFetcher = fetcher ?? fetch;
+    this.fetcher = (input: RequestInfo | URL, init?: RequestInit) =>
+      baseFetcher(input, init);
+  }
 
   async initializeTransaction(
     input: InitializeGatewayTransaction,
@@ -59,21 +69,21 @@ export class PaystackClient implements PaymentGateway {
     const reference = envelope.data?.reference;
 
     if (typeof authorizationUrl !== "string" || typeof reference !== "string") {
-      throw new PaystackGatewayError();
+      throw new PaystackGatewayError("Paystack did not return an authorization URL.");
     }
 
     let checkoutUrl: URL;
     try {
       checkoutUrl = new URL(authorizationUrl);
     } catch {
-      throw new PaystackGatewayError();
+      throw new PaystackGatewayError("Invalid checkout URL returned by Paystack.");
     }
 
     if (
       checkoutUrl.protocol !== "https:" ||
       checkoutUrl.hostname !== "checkout.paystack.com"
     ) {
-      throw new PaystackGatewayError();
+      throw new PaystackGatewayError("Untrusted checkout domain returned by Paystack.");
     }
 
     return { authorizationUrl: checkoutUrl.toString(), reference };
@@ -93,7 +103,7 @@ export class PaystackClient implements PaymentGateway {
       typeof data.amount !== "number" ||
       typeof data.currency !== "string"
     ) {
-      throw new PaystackGatewayError();
+      throw new PaystackGatewayError("Invalid transaction data returned by Paystack.");
     }
 
     return {
@@ -121,19 +131,25 @@ export class PaystackClient implements PaymentGateway {
         },
         signal: AbortSignal.timeout(15_000),
       });
-    } catch {
-      throw new PaystackGatewayError();
+    } catch (error) {
+      throw new PaystackGatewayError(
+        "Network connection to Paystack failed: " +
+          (error instanceof Error ? error.message : String(error)),
+      );
     }
 
     let envelope: PaystackEnvelope<T>;
     try {
       envelope = (await response.json()) as PaystackEnvelope<T>;
     } catch {
-      throw new PaystackGatewayError();
+      throw new PaystackGatewayError(
+        `Paystack returned an unparseable response (HTTP ${response.status}).`,
+      );
     }
 
     if (!response.ok || envelope.status !== true || !envelope.data) {
-      throw new PaystackGatewayError();
+      const msg = envelope.message || `Paystack error (HTTP ${response.status})`;
+      throw new PaystackGatewayError(msg);
     }
 
     return envelope;

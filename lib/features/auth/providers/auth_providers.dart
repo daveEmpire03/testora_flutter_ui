@@ -23,23 +23,30 @@ class AuthController extends Notifier<AuthState> {
 
   @override
   AuthState build() {
-    final repository = ref.read(authRepositoryProvider);
+    try {
+      final repository = ref.read(authRepositoryProvider);
 
-    _authSubscription = repository.authStateChanges().listen(
-      (user) {
-        state = AuthState(
-          isLoading: false,
-          isLoggedIn: user != null,
-          user: user,
-        );
-      },
-      onError: (Object error, StackTrace stackTrace) {
-        state = const AuthState(
-          isLoading: false,
-          error: 'Unable to restore your session. Please restart Testora.',
-        );
-      },
-    );
+      _authSubscription = repository.authStateChanges().listen(
+        (user) {
+          state = AuthState(
+            isLoading: false,
+            isLoggedIn: user != null,
+            user: user,
+          );
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          state = const AuthState(
+            isLoading: false,
+            error: 'Unable to restore your session. Please restart Testora.',
+          );
+        },
+      );
+    } catch (error) {
+      return AuthState(
+        isLoading: false,
+        error: 'Authentication is unavailable on this platform: $error',
+      );
+    }
 
     ref.onDispose(() {
       _authSubscription?.cancel();
@@ -53,18 +60,23 @@ class AuthController extends Notifier<AuthState> {
     required String email,
     required String password,
   }) async {
-    state = const AuthState(isLoading: true);
+    state = state.copyWith(error: null);
 
     try {
       final user = await ref
           .read(authRepositoryProvider)
           .login(email: email, password: password);
 
-      state = AuthState(isLoggedIn: true, user: user);
-      return true;
-    } catch (error) {
       state = AuthState(
         isLoading: false,
+        isLoggedIn: true,
+        user: user,
+      );
+      return true;
+    } catch (error) {
+      state = state.copyWith(
+        isLoading: false,
+        isLoggedIn: false,
         error: _errorMessage(error),
       );
       return false;
@@ -77,7 +89,7 @@ class AuthController extends Notifier<AuthState> {
     required String phone,
     required String password,
   }) async {
-    state = const AuthState(isLoading: true);
+    state = state.copyWith(error: null);
 
     try {
       final user = await ref
@@ -89,11 +101,16 @@ class AuthController extends Notifier<AuthState> {
             password: password,
           );
 
-      state = AuthState(isLoggedIn: true, user: user);
-      return true;
-    } catch (error) {
       state = AuthState(
         isLoading: false,
+        isLoggedIn: true,
+        user: user,
+      );
+      return true;
+    } catch (error) {
+      state = state.copyWith(
+        isLoading: false,
+        isLoggedIn: false,
         error: _errorMessage(error),
       );
       return false;
@@ -129,6 +146,7 @@ class AuthController extends Notifier<AuthState> {
 
   String _errorMessage(Object error) {
     if (error is AuthRepositoryException) return error.message;
-    return 'Something went wrong. Please try again.';
+    if (error is FirebaseException) return error.message ?? error.toString();
+    return error.toString();
   }
 }

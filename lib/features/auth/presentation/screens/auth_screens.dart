@@ -124,9 +124,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (!ok) {
       final err = ref.read(authProvider).error;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(err ?? 'Login failed')));
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(err ?? 'Login failed'),
+            backgroundColor: AppColors.error,
+          ),
+        );
     }
   }
 
@@ -311,9 +316,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (!_terms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please accept the Terms of Service.')),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Please accept the Terms of Service.'),
+            backgroundColor: AppColors.warning,
+          ),
+        );
       return;
     }
 
@@ -333,9 +343,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     if (!ok) {
       final err = ref.read(authProvider).error;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(err ?? 'Registration failed')));
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(err ?? 'Registration failed'),
+            backgroundColor: AppColors.error,
+          ),
+        );
     }
   }
 
