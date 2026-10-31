@@ -44,3 +44,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 pubspec.yaml.bak
+
+# Cloudflare Wrangler local state
+.wrangler/
