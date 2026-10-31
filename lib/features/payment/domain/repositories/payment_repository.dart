@@ -1,4 +1,5 @@
 import '../entities/payment_transaction.dart';
+import '../entities/user_entitlement.dart';
 
 abstract interface class PaymentRepository {
   Future<PaymentTransaction> initializeCheckout({
@@ -18,6 +19,8 @@ abstract interface class PaymentRepository {
   });
 
   Future<List<PaymentTransaction>> getPaymentHistory();
+
+  Future<List<UserEntitlement>> getUserEntitlements();
 }
 
 class PaymentRepositoryException implements Exception {

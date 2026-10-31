@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../../shared/testora_widgets.dart';
 import '../../../auth/providers/auth_providers.dart';
+import '../../../payment/application/payment_api_providers.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -49,11 +50,19 @@ class ProfileScreen extends ConsumerWidget {
             email: user?.email,
             initial: firstLetter,
           ),
+          const SizedBox(height: AppSpacing.md),
+          const _AccountAccessCard(),
           const SizedBox(height: AppSpacing.section),
           const SectionTitle(title: 'Account'),
           const SizedBox(height: AppSpacing.md),
           _MenuGroup(
             items: [
+              _ProfileMenuItem(
+                icon: Icons.receipt_long_outlined,
+                title: 'Transactions',
+                subtitle: 'Payment history, receipts and status',
+                onTap: () => context.pushNamed('transactions'),
+              ),
               _ProfileMenuItem(
                 icon: Icons.settings_outlined,
                 title: 'Settings',
@@ -235,6 +244,201 @@ class _ProfileIdentityCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _AccountAccessCard extends ConsumerWidget {
+  const _AccountAccessCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = context.tokens;
+    final entitlements = ref.watch(userEntitlementsProvider);
+
+    return entitlements.when(
+      loading: () => TestoraCard(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Text(
+              'Checking your exam access...',
+              style: TextStyle(
+                color: tokens.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+      error: (_, _) => TestoraCard(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline_rounded, color: tokens.textSecondary),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text(
+                'Your account access status could not be loaded.',
+                style: TextStyle(
+                  color: tokens.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            IconButton(
+              tooltip: 'Retry',
+              onPressed: () => ref.invalidate(userEntitlementsProvider),
+              icon: const Icon(Icons.refresh_rounded),
+            ),
+          ],
+        ),
+      ),
+      data: (records) {
+        final active = records.where((record) => record.isActive).toList();
+        final packageLabels = active
+            .map((record) => _accessPackageLabel(record.packageId))
+            .toSet()
+            .toList()
+          ..sort();
+        final hasAccess = packageLabels.isNotEmpty;
+
+        return TestoraCard(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: tokens.surfaceSecondary,
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                    child: Icon(
+                      hasAccess
+                          ? Icons.workspace_premium_outlined
+                          : Icons.person_outline_rounded,
+                      color: tokens.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Account access',
+                          style: TextStyle(
+                            color: tokens.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          hasAccess
+                              ? 'You have active access to your purchased exam package' +
+                                  (packageLabels.length == 1 ? '.' : 's.')
+                              : 'Free account. Purchase an exam package to unlock access.',
+                          style: TextStyle(
+                            color: tokens.textSecondary,
+                            fontSize: 11,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: (hasAccess ? tokens.success : tokens.surfaceSecondary)
+                          .withValues(alpha: 0.13),
+                      borderRadius: BorderRadius.circular(AppRadius.circle),
+                    ),
+                    child: Text(
+                      hasAccess ? 'PAID STUDENT' : 'FREE ACCOUNT',
+                      style: TextStyle(
+                        color: hasAccess ? tokens.success : tokens.textSecondary,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (packageLabels.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'ACTIVE EXAM ACCESS',
+                  style: TextStyle(
+                    color: tokens.textMuted,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.7,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    for (final label in packageLabels)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.sm,
+                        ),
+                        decoration: BoxDecoration(
+                          color: tokens.surfaceSecondary,
+                          borderRadius: BorderRadius.circular(AppRadius.circle),
+                          border: Border.all(color: tokens.border),
+                        ),
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            color: tokens.textPrimary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+String _accessPackageLabel(String packageId) {
+  switch (packageId) {
+    case 'utme':
+      return 'UTME / JAMB';
+    case 'waec':
+      return 'WAEC';
+    case 'post-utme':
+      return 'Post-UTME';
+    case 'postgraduate':
+      return 'Postgraduate';
+    default:
+      return packageId;
   }
 }
 

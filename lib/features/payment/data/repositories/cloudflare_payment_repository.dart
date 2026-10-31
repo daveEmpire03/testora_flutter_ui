@@ -2,8 +2,10 @@ import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../domain/entities/payment_transaction.dart';
+import '../../domain/entities/user_entitlement.dart';
 import '../../domain/repositories/payment_repository.dart';
 import '../models/payment_transaction_model.dart';
+import '../models/user_entitlement_model.dart';
 
 class CloudflarePaymentRepository implements PaymentRepository {
   CloudflarePaymentRepository({
@@ -94,10 +96,34 @@ class CloudflarePaymentRepository implements PaymentRepository {
 
   @override
   Future<List<PaymentTransaction>> getPaymentHistory() async {
+    final records = await _authenticatedListRequest('payments/history');
+    return records.map(_parseTransaction).toList(growable: false);
+  }
+
+  @override
+  Future<List<UserEntitlement>> getUserEntitlements() async {
+    final records = await _authenticatedListRequest('entitlements');
+
+    try {
+      return records
+          .map(
+            (record) => UserEntitlementModel.fromJson(record).toEntity(),
+          )
+          .toList(growable: false);
+    } on FormatException {
+      throw const PaymentRepositoryException(
+        'The access service returned an invalid response. Please retry.',
+      );
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _authenticatedListRequest(
+    String path,
+  ) async {
     final user = _firebaseAuth.currentUser;
     if (user == null) {
       throw const PaymentRepositoryException(
-        'Please sign in to view your payment history.',
+        'Please sign in to view your account information.',
       );
     }
 
@@ -110,7 +136,7 @@ class CloudflarePaymentRepository implements PaymentRepository {
       }
 
       final response = await _dio.get<dynamic>(
-        'payments/history',
+        path,
         options: Options(
           headers: {
             'Authorization': 'Bearer $idToken',
@@ -119,23 +145,22 @@ class CloudflarePaymentRepository implements PaymentRepository {
       );
 
       final body = response.data;
-      if (body is! Map) {
+      if (body is! Map || body['data'] is! List) {
         throw const PaymentRepositoryException(
-          'The payment service returned an invalid response. Please retry.',
+          'The service returned an invalid response. Please retry.',
         );
       }
 
-      final data = body['data'];
-      if (data is! List) {
+      final data = body['data'] as List;
+      if (data.any((item) => item is! Map)) {
         throw const PaymentRepositoryException(
-          'The payment service returned an invalid response. Please retry.',
+          'The service returned an invalid response. Please retry.',
         );
       }
 
       return data
-          .whereType<Map>()
-          .map((item) => _parseTransaction(Map<String, dynamic>.from(item)))
-          .toList();
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList(growable: false);
     } on DioException catch (error) {
       throw PaymentRepositoryException(_messageFor(error));
     } on FirebaseAuthException {
@@ -144,7 +169,7 @@ class CloudflarePaymentRepository implements PaymentRepository {
       );
     } on TypeError {
       throw const PaymentRepositoryException(
-        'The payment service returned an invalid response. Please retry.',
+        'The service returned an invalid response. Please retry.',
       );
     }
   }

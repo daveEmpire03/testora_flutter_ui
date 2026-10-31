@@ -15,6 +15,7 @@ import 'package:testora_flutter_ui/features/home/presentation/screens/home_scree
 import 'package:testora_flutter_ui/features/profile/presentation/screens/profile_screen.dart';
 import 'package:testora_flutter_ui/features/payment/presentation/screens/payment_screen.dart';
 import 'package:testora_flutter_ui/features/payment/presentation/screens/payment_checkout_screen.dart';
+import 'package:testora_flutter_ui/features/payment/presentation/screens/transactions_screen.dart';
 import 'package:testora_flutter_ui/features/progress/presentation/screens/progress_screen.dart';
 import 'package:testora_flutter_ui/features/quiz/presentation/screens/quiz_screen.dart';
 import 'package:testora_flutter_ui/features/quiz/presentation/screens/quiz_setup_screen.dart';
@@ -45,6 +46,7 @@ abstract final class Routes {
   static const notifications = 'notifications';
   static const achievements = 'achievements';
   static const history = 'history';
+  static const transactions = 'transactions';
 }
 
 class RouterRefreshNotifier extends ChangeNotifier {
@@ -258,6 +260,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: 'history',
                     name: Routes.history,
                     builder: (_, _) => const HistoryScreen(),
+                  ),
+                  GoRoute(
+                    path: 'transactions',
+                    name: Routes.transactions,
+                    builder: (_, _) => const TransactionsScreen(),
                   ),
                   GoRoute(
                     path: 'bookmarks',

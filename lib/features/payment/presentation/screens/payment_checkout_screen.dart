@@ -187,6 +187,9 @@ class _PaymentCheckoutScreenState
         if (!mounted) return;
 
         if (hasEntitlement) {
+          ref.invalidate(paymentHistoryProvider);
+          ref.invalidate(userEntitlementsProvider);
+
           setState(() {
             _hasPackageAccess = true;
             _statusMessage =
